@@ -6,7 +6,6 @@ import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import java.util.Date;
 
 public class ProfileCreateCommand {
-    @TargetAggregateIdentifier
     private String idProfile;
     private String fullName;
     private String urlProfilePicture;

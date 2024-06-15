@@ -1,6 +1,7 @@
 package TTCS.ProfileService.application.Command.ProfileCommandService;
 
 import KMA.TTCS.CommonService.command.AccountProfileCommand.ProfileCreateCommand;
+import KMA.TTCS.CommonService.command.AccountProfileCommand.SendEmailOTPCommand;
 import TTCS.ProfileService.application.Command.CommandEvent.Command.Follow.FollowAcceptCommand;
 import TTCS.ProfileService.application.Command.CommandEvent.Command.Follow.FollowCreateCommand;
 import TTCS.ProfileService.application.Command.CommandEvent.Command.Follow.FollowRemoveCommand;
@@ -54,26 +55,28 @@ public class ProfileCommandService {
                 });
     }
 
-    @CommandHandler
-    public void createProfile(ProfileCreateCommand profileCreateCommand){
-        System.out.println("CommandHandler - createProfile");
-        Profile profile = Profile.builder()
-                .idProfile(profileCreateCommand.getIdProfile())
-                .fullName(profileCreateCommand.getFullName())
-                .urlProfilePicture(profileCreateCommand.getUrlProfilePicture())
-                .biography(profileCreateCommand.getBiography())
-                .gender(profileCreateCommand.getGender())
-                .dateOfBirth(profileCreateCommand.getDateOfBirth())
-                .updateAt(new Date())
-                .idAccount(profileCreateCommand.getIdAccount())
-                .friendShip(new HashSet<>())
-                .build();
+//    @CommandHandler
+//    public void createProfile(ProfileCreateCommand profileCreateCommand){
+//        System.out.println("CommandHandler - createProfile");
+//        Profile profile = Profile.builder()
+//                .idProfile(profileCreateCommand.getIdProfile())
+//                .fullName(profileCreateCommand.getFullName())
+//                .urlProfilePicture(profileCreateCommand.getUrlProfilePicture())
+//                .biography(profileCreateCommand.getBiography())
+//                .gender(profileCreateCommand.getGender())
+//                .dateOfBirth(profileCreateCommand.getDateOfBirth())
+//                .updateAt(new Date())
+//                .idAccount(profileCreateCommand.getIdAccount())
+//                .friendShip(new HashSet<>())
+//                .build();
+//        profileRepository.save(profile);
+//        ProfileCreateAggregate profileCreateAggregate = new ProfileCreateAggregate();
+//        BeanUtils.copyProperties(profileCreateCommand , profileCreateAggregate);
+//        commandGateway.sendAndWait(profileCreateAggregate);
+//    }
 
-        profileRepository.save(profile);
-        ProfileCreateAggregate profileCreateAggregate = new ProfileCreateAggregate();
-        BeanUtils.copyProperties(profileCreateCommand , profileCreateAggregate);
-        commandGateway.send(profileCreateAggregate);
-    }
+
+
     public CompletableFuture<ProfileCommandResponse> createFollow(FollowCreateRequest followCreateRequest) {
         FollowCreateCommand followCreateCommand = FollowCreateCommand.builder()
                 .idProfileFollower(followCreateRequest.getIdProfileFollower())
@@ -176,24 +179,24 @@ public class ProfileCommandService {
     }
 
 
-    public CompletableFuture<FriendCreateResponse> removeFriend(FriendRemoveRequest friendRemoveRequest) {
-
-        FriendRemoveCommand friendRemoveCommand = FriendRemoveCommand.builder()
-                .idProfile(friendRemoveRequest.getIdProfile())
-                .idFriend(friendRemoveRequest.getIdFriend())
-                .idProfileTarget(friendRemoveRequest.getIdProfileTarget())
-                .executeAt(new Date())
-                .build();
-        CompletableFuture<FriendCreateResponse> future = commandGateway.send(friendRemoveCommand);
-        return future
-                .thenApply(result -> {
-                    return FriendCreateResponse.builder()
-                            .idProfile1("ok")
-                            .idProfile2("ok")
-                            .build();
-                })
-                .exceptionally(exception -> {
-                    throw new AxonException(AxonErrorCode.AGGREGATE_NOT_FOUND_EXCEPTION);
-                });
-    }
+//    public CompletableFuture<FriendCreateResponse> removeFriend(FriendRemoveRequest friendRemoveRequest) {
+//
+//        FriendRemoveCommand friendRemoveCommand = FriendRemoveCommand.builder()
+//                .idProfile(friendRemoveRequest.getIdProfile())
+//                .idFriend(friendRemoveRequest.getIdFriend())
+//                .idProfileTarget(friendRemoveRequest.getIdProfileTarget())
+//                .executeAt(new Date())
+//                .build();
+//        CompletableFuture<FriendCreateResponse> future = commandGateway.send(friendRemoveCommand);
+//        return future
+//                .thenApply(result -> {
+//                    return FriendCreateResponse.builder()
+//                            .idProfile1("ok")
+//                            .idProfile2("ok")
+//                            .build();
+//                })
+//                .exceptionally(exception -> {
+//                    throw new AxonException(AxonErrorCode.AGGREGATE_NOT_FOUND_EXCEPTION);
+//                });
+//    }
 }

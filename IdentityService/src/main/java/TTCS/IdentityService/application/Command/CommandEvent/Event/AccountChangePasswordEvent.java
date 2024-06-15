@@ -20,5 +20,6 @@ public class AccountChangePasswordEvent {
     String oldPassword;
     String newPassword;
     Date executeAt;
+    String email;
 
 }

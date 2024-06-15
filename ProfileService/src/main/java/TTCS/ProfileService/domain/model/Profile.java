@@ -1,6 +1,7 @@
 package TTCS.ProfileService.domain.model;
 
 import KMA.TTCS.CommonService.enumType.Gender;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.neo4j.core.schema.Id;
@@ -24,10 +25,17 @@ public class Profile {
     Date dateOfBirth;
     Date updateAt;
     String idAccount;
-    @Relationship(type = "FOLLOWING", direction = Relationship.Direction.OUTGOING)
-    Set<Profile> following = new HashSet<>();
+
     @Relationship(type = "FRIEND", direction = Relationship.Direction.OUTGOING)
     Set<Friend> friendShip = new HashSet<>();
+
+
+    @Relationship(type = "FOLLOWER", direction = Relationship.Direction.OUTGOING)
+    Set<Follow> following = new HashSet<>();
+
+
+        @Relationship(type = "TARGET", direction = Relationship.Direction.INCOMING)
+    Set<Follow> follower = new HashSet<>();
 
 
 

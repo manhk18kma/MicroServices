@@ -1,16 +1,20 @@
-package TTCS.IdentityService.config;
+package TTCS.IdentityService.config;//package TTCS.IdentityService.config;
 
 import com.thoughtworks.xstream.XStream;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+
 
 @Configuration
+@Primary
 public class AxonConfig {
- 
+
     @Bean
     public XStream xStream() {
         XStream xStream = new XStream();
-      
+
         xStream.allowTypesByWildcard(new String[] {
                 "TTCS.**",
                 "KMA.TTCS.**",
@@ -24,4 +28,8 @@ public class AxonConfig {
 
         return xStream;
     }
+
+
 }
+
+

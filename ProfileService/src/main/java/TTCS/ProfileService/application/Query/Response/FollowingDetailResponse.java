@@ -15,6 +15,9 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FollowingDetailResponse {
-    String idProfileTarget;
-    String fullNameProfileTarget;
+    String idFollow;
+    String idProfileFollowing;
+    String fullNameProfileFollowing;
+    String urlProfilePicture;
+    Date since;
 }

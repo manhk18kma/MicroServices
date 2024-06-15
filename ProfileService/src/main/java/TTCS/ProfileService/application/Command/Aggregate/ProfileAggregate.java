@@ -1,6 +1,9 @@
 package TTCS.ProfileService.application.Command.Aggregate;
 
 
+import KMA.TTCS.CommonService.command.AccountProfileCommand.ProfileCreateCommand;
+import KMA.TTCS.CommonService.command.AccountProfileCommand.ProfileRollBackCommand;
+import KMA.TTCS.CommonService.event.AccountProfile.ProfileRollBackEvent;
 import TTCS.ProfileService.application.Command.CommandEvent.Command.Follow.FollowAcceptCommand;
 import TTCS.ProfileService.application.Command.CommandEvent.Command.Follow.FollowAcceptRemoveCommand;
 import TTCS.ProfileService.application.Command.CommandEvent.Command.Follow.FollowCreateCommand;
@@ -63,9 +66,9 @@ public class ProfileAggregate {
     public ProfileAggregate() {
     }
     @CommandHandler
-    public ProfileAggregate(ProfileCreateAggregate profileCreateAggregate) {
+    public ProfileAggregate(ProfileCreateCommand command) {
         ProfileCreateEvent profileCreateEvent = new ProfileCreateEvent();
-        BeanUtils.copyProperties(profileCreateAggregate , profileCreateEvent);
+        BeanUtils.copyProperties(command , profileCreateEvent);
         AggregateLifecycle.apply(profileCreateEvent);
     }
     @EventSourcingHandler
@@ -82,6 +85,26 @@ public class ProfileAggregate {
         this.following = new HashSet<>();
 
     }
+//    @CommandHandler
+//    public ProfileAggregate(ProfileCreateAggregate profileCreateAggregate) {
+//        ProfileCreateEvent profileCreateEvent = new ProfileCreateEvent();
+//        BeanUtils.copyProperties(profileCreateAggregate , profileCreateEvent);
+//        AggregateLifecycle.apply(profileCreateEvent);
+//    }
+//    @EventSourcingHandler
+//    public void on(ProfileCreateEvent profileCreateEvent) {
+//        this.idProfile = profileCreateEvent.getIdProfile();
+//        this.fullName = profileCreateEvent.getFullName();
+//        this.urlProfilePicture = profileCreateEvent.getUrlProfilePicture();
+//        this.biography = profileCreateEvent.getBiography();
+//        this.gender = profileCreateEvent.getGender();
+//        this.dateOfBirth = profileCreateEvent.getDateOfBirth();
+//        this.idAccount = profileCreateEvent.getIdAccount();
+//        this.friendShip = new HashSet<>();
+//        this.followers = new HashSet<>();
+//        this.following = new HashSet<>();
+//
+//    }
     @CommandHandler
     public void handle(ProfileUpdateCommand command) {
         ProfileUpdateEvent event = new ProfileUpdateEvent();
@@ -97,10 +120,6 @@ public class ProfileAggregate {
         this.biography = event.getBiography();
         this.gender = event.getGender();
     }
-
-
-
-//    Create Follow
    @CommandHandler
    public void handle(FollowCreateCommand command, ProfileRepository profileRepository, CommandGateway commandGateway) {
     Optional<Profile> profileFollowerOpt = profileRepository.findById(command.getIdProfileFollower());
@@ -175,11 +194,6 @@ public class ProfileAggregate {
         this.idProfile = event.getProfileTarget().getIdProfile();
         this.followers.add(event.getProfileFollower());
     }
-
-
-
-
-//    Remove follow
     public void handle(FollowRemoveCommand command, ProfileRepository profileRepository, CommandGateway commandGateway) {
     Optional<Profile> profileFollower = profileRepository.findById(command.getIdProfileFollower());
     Optional<Profile> profileTarget = profileRepository.findById(command.getIdProfileTarget());
@@ -231,9 +245,6 @@ public class ProfileAggregate {
             }
         }
     }
-
-
-//Create Friend
     @CommandHandler
     public void handle(FriendCreateCommand command , ProfileRepository profileRepository , CommandGateway commandGateway) {
         Optional<Profile> profile1 = profileRepository.findById(command.getIdProfile1());
@@ -245,8 +256,10 @@ public class ProfileAggregate {
 
         }
         Friend friend = Friend.builder()
-                .profile1(profile1.get())
-                .profile2(profile2.get())
+//                .profile1(profile1.get())
+//                .profile2(profile2.get())
+                .idProfile1(profile1.get().getIdProfile())
+                .idProfile2(profile2.get().getIdProfile())
                 .since(command.getExecuteAt())
                 .idFriend(UUID.randomUUID().toString())
                 .build();
@@ -264,12 +277,14 @@ public class ProfileAggregate {
     }
     @EventSourcingHandler
     public void on(FriendCreateEvent event) {
-        this.idProfile = event.getFriend().getProfile1().getIdProfile();
+//        this.idProfile = event.getFriend().getProfgile1().getIdProfile();
+        this.idProfile = event.getFriend().getIdProfile1();
         Iterator<Profile> followersIterator = this.followers.iterator();
         while (followersIterator.hasNext()) {
             Profile profile = followersIterator.next();
-            if (profile.getIdProfile().equals(event.getFriend().getProfile2().getIdProfile())) {
-                followersIterator.remove();
+//            if (profile.getIdProfile().equals(event.getFriend().getProfile2().getIdProfile())) {
+            if (profile.getIdProfile().equals(event.getFriend().getIdProfile2())) {
+            followersIterator.remove();
                 System.out.println("removing : FriendCreateEvent");
                 break;
             }
@@ -286,11 +301,13 @@ public class ProfileAggregate {
     }
     @EventSourcingHandler
     public void on(FriendAcceptEvent event) {
-        this.idProfile = event.getFriend().getProfile2().getIdProfile();
+//        this.idProfile = event.getFriend().getProfile2().getIdProfile();
+        this.idProfile = event.getFriend().getIdProfile2();
         Iterator<Profile> followingIterator = this.following.iterator();
         while (followingIterator.hasNext()) {
             Profile profile = followingIterator.next();
-            if (profile.getIdProfile().equals(event.getFriend().getProfile1().getIdProfile())) {
+            if (profile.getIdProfile().equals(event.getFriend().getIdProfile1())) {
+//            if (profile.getIdProfile().equals(event.getFriend().getProfile1().getIdProfile())) {
                 followingIterator.remove();
                 System.out.println("removing : FriendAcceptEvent");
                 break;
@@ -298,10 +315,6 @@ public class ProfileAggregate {
         }
         this.friendShip.add( event.getFriend());
     }
-
-
-
-//    Remove Friend
     @CommandHandler
     public void handle(FriendRemoveCommand command ,
                        ProfileRepository profileRepository ,
@@ -363,9 +376,17 @@ public class ProfileAggregate {
             }
         }
     }
-
-
-
+    @CommandHandler
+    public void handle(ProfileRollBackCommand command) {
+        ProfileRollBackEvent event = new ProfileRollBackEvent();
+        event.setIdProfile(command.getIdProfile());
+        AggregateLifecycle.apply(event);
+    }
+    @EventSourcingHandler
+    public void on(ProfileRollBackEvent event) {
+        System.out.println("ProfileRollBackEvent");
+        this.idProfile = event.getIdProfile();
+    }
     @CommandHandler void handle(TestCommand command){
         log.info("Profile ID: " + idProfile);
         log.info("Full Name: " + fullName);

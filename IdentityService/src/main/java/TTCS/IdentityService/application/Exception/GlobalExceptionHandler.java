@@ -63,17 +63,17 @@ public class GlobalExceptionHandler {
 
 
 
-    @ExceptionHandler(AppException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleAppException(AppException e, WebRequest request) {
-        ErrorResponse errorResponse = new ErrorResponse();
-        errorResponse.setTimestamp(new Date());
-        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
-        errorResponse.setStatus(e.getErrorCode().getCode());
-        errorResponse.setError(AppException.class.getSimpleName());
-        errorResponse.setMessage(e.getMessage());
-        return errorResponse;
-    }
+        @ExceptionHandler(AppException.class)
+        @ResponseStatus(HttpStatus.BAD_REQUEST)
+        public ErrorResponse handleAppException(AppException e, WebRequest request) {
+            ErrorResponse errorResponse = new ErrorResponse();
+            errorResponse.setTimestamp(new Date());
+            errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
+            errorResponse.setStatus(e.getErrorCode().getCode());
+            errorResponse.setError(AppException.class.getSimpleName());
+            errorResponse.setMessage(e.getMessage());
+            return errorResponse;
+        }
 
     @ExceptionHandler(AxonException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)

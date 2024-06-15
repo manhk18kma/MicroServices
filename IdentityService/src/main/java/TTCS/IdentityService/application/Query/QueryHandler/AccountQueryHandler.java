@@ -13,6 +13,7 @@ import org.axonframework.queryhandling.QueryHandler;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -41,8 +42,6 @@ public class AccountQueryHandler {
     public Optional<Account> handle(AccountQueryGetById accountQueryGetById) {
         return accountRepository.findById(accountQueryGetById.getIdAccount());
     }
-
-
 
 
 }

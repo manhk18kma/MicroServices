@@ -15,6 +15,9 @@ public interface FriendRepository extends Neo4jRepository<Friend, String> {
 
     Page<Friend> findByIdProfile1OrIdProfile2(String idProfile1 , String idProfile2,  Pageable pageable );
 
+    List<Friend> findByIdProfile1OrIdProfile2(String idProfile1 , String idProfile2);
+
+
     int countAllByIdProfile1OrIdProfile2(String id , String id2);
 
 }

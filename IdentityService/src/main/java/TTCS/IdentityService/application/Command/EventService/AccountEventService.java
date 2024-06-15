@@ -1,12 +1,12 @@
 package TTCS.IdentityService.application.Command.EventService;
 
+import KMA.TTCS.CommonService.event.AccountProfile.AccountRollBackEvent;
+import KMA.TTCS.CommonService.event.IdentityMessage.ConnectChatProfileEvent;
+import TTCS.IdentityService.application.Command.Aggregate.FutureTracker;
 import TTCS.IdentityService.application.Command.CommandEvent.Event.AccountActiveEvent;
 import TTCS.IdentityService.application.Command.CommandEvent.Event.AccountChangePasswordEvent;
-import TTCS.IdentityService.application.Command.CommandEvent.Event.AccountCreateEvent;
-import TTCS.IdentityService.application.Exception.AppException.AppErrorCode;
-import TTCS.IdentityService.application.Exception.AppException.AppException;
-import TTCS.IdentityService.application.Exception.AxonException.AxonErrorCode;
-import TTCS.IdentityService.application.Exception.AxonException.AxonException;
+
+import TTCS.IdentityService.application.Command.CommandService.DTO.OTPResponse;
 import TTCS.IdentityService.domain.enumType.UserStatus;
 import TTCS.IdentityService.domain.model.Account;
 import TTCS.IdentityService.infrastructure.persistence.repository.AccountRepository;
@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -51,5 +52,29 @@ public class AccountEventService {
         accountRepository.save(account.get());
     }
 
+    @EventHandler
+    public void on(AccountRollBackEvent event){
+        accountRepository.deleteById(event.getIdAccount());
+    }
+
+
+//    @EventHandler
+//    public void on(ConnectChatProfileEvent connectChatProfileEvent) {
+//        try {
+//            System.out.println("event " + connectChatProfileEvent.getIdTracker());
+//            CompletableFuture<String> future = FutureTracker.futures.remove(connectChatProfileEvent.getIdTracker());
+//            while (future==null){
+//                 future = FutureTracker.futures.remove(connectChatProfileEvent.getIdTracker());
+//            }
+////            if (future != null) {
+//                future.complete(connectChatProfileEvent.getIdChatProfile());
+////            } else {
+////                System.err.println("No CompletableFuture found for idTracker: " + connectChatProfileEvent.getIdTracker());
+////            }
+////
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 
 }

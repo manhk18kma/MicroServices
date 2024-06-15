@@ -6,7 +6,11 @@ import org.springframework.http.HttpStatusCode;
 
 @Getter
 public enum AxonErrorCode {
-    UNCATEGORIZED_EXCEPTION(2999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR);
+    UNCATEGORIZED_EXCEPTION(2999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
+    PROFILE_SERVICE_IS_DEATH(1101, "Profile service is death", HttpStatus.INTERNAL_SERVER_ERROR),
+    NOTIFICATION_IS_DEATH(1102, "Notification service is death", HttpStatus.INTERNAL_SERVER_ERROR),
+    MESSAGING_SERVICE_IS_DEATH(1103, "Messaging service is death", HttpStatus.INTERNAL_SERVER_ERROR);
+
 
 
     AxonErrorCode(int code, String message, HttpStatusCode statusCode) {

@@ -91,7 +91,6 @@ public class ProfileQueryService {
                                     FriendDetailResponse.builder()
                                             .idFriend(friend.getIdFriend())
                                             .idProfileTarget(friend.getIdProfile2())
-                                            .fullNameProfileTarget(friend.getFullNameProfile2())
                                             .since(friend.getSince())
                                             .build()
                             );
@@ -100,7 +99,7 @@ public class ProfileQueryService {
                                     FriendDetailResponse.builder()
                                             .idFriend(friend.getIdFriend())
                                             .idProfileTarget(friend.getIdProfile1())
-                                            .fullNameProfileTarget(friend.getFullNameProfile1())
+//                                            .fullNameProfileTarget(friend.getFullNameProfile1())
                                             .since(friend.getSince())
                                             .build()
                             );
@@ -119,59 +118,59 @@ public class ProfileQueryService {
                     throw new AxonException(AxonErrorCode.AGGREGATE_NOT_FOUND_EXCEPTION);
                 });
     }
-    public CompletableFuture<PageResponse<List<FollowersDetailResponse>>> getAllFollowers(String id, int pageNo, int pageSize) {
-        ProfileQueryGetAllFollowers queryGetAllFollowers = new ProfileQueryGetAllFollowers(id, pageNo, pageSize);
-        int totalElements = friendRepository.countAllByIdProfile1OrIdProfile2(id, id);
-        int totalPages = (int) Math.ceil((double) totalElements / pageSize);
-        List<FollowersDetailResponse> followersDetailResponses = new ArrayList<>();
-
-        return queryGateway.query(queryGetAllFollowers, ResponseTypes.multipleInstancesOf(Profile.class))
-                .thenApply(profiles -> {
-                    profiles.forEach(profile -> {
-                        FollowersDetailResponse followersDetailResponse = new FollowersDetailResponse();
-                        followersDetailResponse.setIdProfileTarget(profile.getIdProfile());
-                        followersDetailResponse.setFullNameProfileTarget(profile.getFullName());
-                        followersDetailResponses.add(followersDetailResponse);
-                    });
-                    return PageResponse.<List<FollowersDetailResponse>>builder()
-                            .size(pageSize)
-                            .totalElements(totalElements)
-                            .totalPages(totalPages)
-                            .number(pageNo)
-                            .items(followersDetailResponses)
-                            .build();
-                })
-                .exceptionally(ex -> {
-                    log.error("Failed to retrieve followers for profile {}: {}", id, ex.getMessage());
-                    throw new AxonException(AxonErrorCode.AGGREGATE_NOT_FOUND_EXCEPTION);
-                });
-    }
-    public CompletableFuture<PageResponse<List<FollowingDetailResponse>>> getAllFollowings(String id, int pageNo, int pageSize) {
-        ProfileQueryGetAllFollowings queryGetAllFollowings = new ProfileQueryGetAllFollowings(id, pageNo, pageSize);
-        int totalElements = friendRepository.countAllByIdProfile1OrIdProfile2(id, id);
-        int totalPages = (int) Math.ceil((double) totalElements / pageSize);
-        List<FollowingDetailResponse> followingDetailResponses = new ArrayList<>();
-
-        return queryGateway.query(queryGetAllFollowings, ResponseTypes.multipleInstancesOf(Profile.class))
-                .thenApply(profiles -> {
-                    profiles.forEach(profile -> {
-                        FollowingDetailResponse followingDetailResponse = new FollowingDetailResponse();
-                        followingDetailResponse.setIdProfileTarget(profile.getIdProfile());
-                        followingDetailResponse.setFullNameProfileTarget(profile.getFullName());
-                        followingDetailResponses.add(followingDetailResponse);
-                    });
-                    return PageResponse.<List<FollowingDetailResponse>>builder()
-                            .size(pageSize)
-                            .totalElements(totalElements)
-                            .totalPages(totalPages)
-                            .number(pageNo)
-                            .items(followingDetailResponses)
-                            .build();
-                })
-                .exceptionally(ex -> {
-                    log.error("Failed to retrieve followers for profile {}: {}", id, ex.getMessage());
-                    throw new AxonException(AxonErrorCode.AGGREGATE_NOT_FOUND_EXCEPTION);
-                });
-    }
+//    public CompletableFuture<PageResponse<List<FollowersDetailResponse>>> getAllFollowers(String id, int pageNo, int pageSize) {
+//        ProfileQueryGetAllFollowers queryGetAllFollowers = new ProfileQueryGetAllFollowers(id, pageNo, pageSize);
+//        int totalElements = friendRepository.countAllByIdProfile1OrIdProfile2(id, id);
+//        int totalPages = (int) Math.ceil((double) totalElements / pageSize);
+//        List<FollowersDetailResponse> followersDetailResponses = new ArrayList<>();
+//
+//        return queryGateway.query(queryGetAllFollowers, ResponseTypes.multipleInstancesOf(Profile.class))
+//                .thenApply(profiles -> {
+//                    profiles.forEach(profile -> {
+//                        FollowersDetailResponse followersDetailResponse = new FollowersDetailResponse();
+//                        followersDetailResponse.setIdProfileTarget(profile.getIdProfile());
+//                        followersDetailResponse.setFullNameProfileTarget(profile.getFullName());
+//                        followersDetailResponses.add(followersDetailResponse);
+//                    });
+//                    return PageResponse.<List<FollowersDetailResponse>>builder()
+//                            .size(pageSize)
+//                            .totalElements(totalElements)
+//                            .totalPages(totalPages)
+//                            .number(pageNo)
+//                            .items(followersDetailResponses)
+//                            .build();
+//                })
+//                .exceptionally(ex -> {
+//                    log.error("Failed to retrieve followers for profile {}: {}", id, ex.getMessage());
+//                    throw new AxonException(AxonErrorCode.AGGREGATE_NOT_FOUND_EXCEPTION);
+//                });
+//    }
+//    public CompletableFuture<PageResponse<List<FollowingDetailResponse>>> getAllFollowings(String id, int pageNo, int pageSize) {
+//        ProfileQueryGetAllFollowings queryGetAllFollowings = new ProfileQueryGetAllFollowings(id, pageNo, pageSize);
+//        int totalElements = friendRepository.countAllByIdProfile1OrIdProfile2(id, id);
+//        int totalPages = (int) Math.ceil((double) totalElements / pageSize);
+//        List<FollowingDetailResponse> followingDetailResponses = new ArrayList<>();
+//
+//        return queryGateway.query(queryGetAllFollowings, ResponseTypes.multipleInstancesOf(Profile.class))
+//                .thenApply(profiles -> {
+//                    profiles.forEach(profile -> {
+//                        FollowingDetailResponse followingDetailResponse = new FollowingDetailResponse();
+//                        followingDetailResponse.setIdProfileTarget(profile.getIdProfile());
+//                        followingDetailResponse.setFullNameProfileTarget(profile.getFullName());
+//                        followingDetailResponses.add(followingDetailResponse);
+//                    });
+//                    return PageResponse.<List<FollowingDetailResponse>>builder()
+//                            .size(pageSize)
+//                            .totalElements(totalElements)
+//                            .totalPages(totalPages)
+//                            .number(pageNo)
+//                            .items(followingDetailResponses)
+//                            .build();
+//                })
+//                .exceptionally(ex -> {
+//                    log.error("Failed to retrieve followers for profile {}: {}", id, ex.getMessage());
+//                    throw new AxonException(AxonErrorCode.AGGREGATE_NOT_FOUND_EXCEPTION);
+//                });
+//    }
 
 }

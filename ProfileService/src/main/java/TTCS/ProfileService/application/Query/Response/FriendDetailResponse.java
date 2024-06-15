@@ -18,5 +18,6 @@ public class FriendDetailResponse {
     String idFriend;
     String idProfileTarget;
     String fullNameProfileTarget;
+    String urlProfilePicture;
     Date since;
 }

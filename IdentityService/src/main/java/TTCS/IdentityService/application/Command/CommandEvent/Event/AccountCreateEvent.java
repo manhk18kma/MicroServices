@@ -25,6 +25,7 @@ public class AccountCreateEvent {
      Date dateOfBirth;
      String secretKey;
      String idProfile;
+     String idChatProfile;
      Date createAt;
      Date executeAt;
      UserStatus status;

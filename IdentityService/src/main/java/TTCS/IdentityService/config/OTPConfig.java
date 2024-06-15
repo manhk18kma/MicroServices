@@ -15,11 +15,11 @@ public class OTPConfig {
     @Bean
     public GoogleAuthenticatorConfig googleAuthenticatorConfig() {
         return new GoogleAuthenticatorConfig.GoogleAuthenticatorConfigBuilder()
-                .setTimeStepSizeInMillis(3000000) // Đặt kích thước bước thời gian là 30 giây
-                .setWindowSize(1)
                 .setCodeDigits(6)
+                .setTimeStepSizeInMillis(30000*2)
                 .build();
     }
+
 
 
 }

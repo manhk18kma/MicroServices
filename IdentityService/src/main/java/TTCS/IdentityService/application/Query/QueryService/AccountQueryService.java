@@ -17,6 +17,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.QueryGateway;
+import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -60,7 +61,6 @@ public class AccountQueryService {
             throw new AxonException(AxonErrorCode.UNCATEGORIZED_EXCEPTION);
         });
     }
-
 
 
     public CompletableFuture<AccountDetailsResponse> getById(String id) {

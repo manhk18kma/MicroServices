@@ -17,10 +17,14 @@ public interface AccountRepository extends JpaRepository<Account , String> {
     Account findByEmail(String email);
     boolean existsAccountByEmail(String email);
     boolean existsAccountByUsername(String username);
+    Account findByUsername(String username);
+    Account findByIdProfile(String username);
+
 
     Page<Account> findAllBy(Pageable pageable);
 
     Optional<Account> findById(String id);
 
     int countAllBy();
+
 }

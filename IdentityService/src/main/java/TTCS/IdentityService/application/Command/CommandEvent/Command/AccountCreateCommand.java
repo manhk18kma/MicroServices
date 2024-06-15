@@ -28,6 +28,7 @@ public class AccountCreateCommand {
     Date dateOfBirth;
     String secretKey;
     String idProfile;
+    String idChatProfile;
     Date createAt;
     Date executeAt;
 }

@@ -1,12 +1,17 @@
 package TTCS.IdentityService.presentation.command.dto.response;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Builder;
+import lombok.ToString;
 
+import java.util.Date;
 
+@Builder
+@ToString
 public class ResponseData<T> {
     private int status;
     private String message;
+    private Date timestamp;
     @JsonInclude(JsonInclude.Include.NON_NULL)
-
     private T data;
 
 public ResponseData(int status, String message) {
@@ -20,7 +25,20 @@ public ResponseData(int status, String message, T data) {
     this.data = data;
 }
 
-public int getStatus() {
+    public ResponseData(int status, String message, Date timeStamp) {
+        this.status = status;
+        this.message = message;
+        this.timestamp = timeStamp;
+    }
+
+    public ResponseData(int status, String message, Date timestamp, T data) {
+        this.status = status;
+        this.message = message;
+        this.timestamp = timestamp;
+        this.data = data;
+    }
+
+    public int getStatus() {
     return status;
 }
 
@@ -36,7 +54,15 @@ public void setMessage(String message) {
     this.message = message;
 }
 
-public T getData() {
+    public Date getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(Date timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public T getData() {
     return data;
 }
 

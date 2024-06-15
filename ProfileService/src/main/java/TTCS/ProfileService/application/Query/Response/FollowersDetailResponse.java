@@ -3,6 +3,8 @@ package TTCS.ProfileService.application.Query.Response;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.Date;
+
 @Getter
 @ToString
 @Setter
@@ -11,6 +13,9 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FollowersDetailResponse {
-    String idProfileTarget;
-    String fullNameProfileTarget;
+    String idFollow;
+    String idProfileFollower;
+    String fullNameFollower;
+    String urlProfilePictureFollower;
+    Date since;
 }

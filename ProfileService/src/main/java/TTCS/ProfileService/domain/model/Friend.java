@@ -14,13 +14,7 @@ import java.util.Date;
 public class Friend {
     @Id
     String idFriend;
-    @TargetNode
-    Profile profile1;
     String idProfile1;
-    String fullNameProfile1;
-    @TargetNode
-    Profile profile2;
     String idProfile2;
-    String fullNameProfile2;
     Date since;
 }

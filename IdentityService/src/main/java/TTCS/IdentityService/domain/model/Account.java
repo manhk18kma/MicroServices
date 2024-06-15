@@ -1,15 +1,15 @@
 package TTCS.IdentityService.domain.model;
 
 import TTCS.IdentityService.domain.enumType.UserStatus;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+
 @Getter
 @Setter
 @Builder
@@ -28,7 +28,16 @@ public class Account implements Serializable {
     Date updateAt;
     UserStatus status;
     String idProfile;
+    String idChatProfile;
     String secretKey;
+
+    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinTable(
+            name = "account_roles",
+            joinColumns = @JoinColumn(name = "account_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+     Set<Role> roles = new HashSet<>();
 
 
 }
