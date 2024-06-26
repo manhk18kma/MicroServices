@@ -18,8 +18,42 @@
 		<spring-cloud.version>2023.0.1</spring-cloud.version>
 	</properties>
 	<dependencies>
-		<!-- https://mvnrepository.com/artifact/io.netty/netty-resolver-dns-native-macos -->
-		<!-- https://mvnrepository.com/artifact/io.netty/netty-all -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-ui</artifactId>
+			<version>1.6.14</version> <!-- Có thể có phiên bản khác -->
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-webflux-core -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-webflux-core</artifactId>
+			<version>1.8.0</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-webflux-ui -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-webflux-ui</artifactId>
+			<version>1.8.0</version>
+		</dependency>
+
+
+
+
+
+
+
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<scope>runtime</scope>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>

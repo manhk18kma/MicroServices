@@ -7,40 +7,37 @@ spring:
   cloud:
     gateway:
       routes:
-#        - IdentityService
-        - id: IdentityService-identityQuery
+        - id: IdentityService
           uri: http://localhost:8081
           predicates:
-            - Path=/api/v1/identity/**
+            - Path=/api/v1/accounts/**
 
-#        ProfileService
+
+        - id: IdentityServiceAuth
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/v1/auth/**
+
+
+
+
+
+
         - id: ProfileService
           uri: http://localhost:8082
           predicates:
             - Path=/api/v1/profile/**
-        #          filters:
-        #            - RewritePath=/identityCommand/(?<remaining>.*), /$\{remaining}
 
-
-
-
-        - id: NotificationService-profileCommand
+        - id: NotificationService
           uri: http://localhost:8083
           predicates:
-            - Path=/profileCommand/**
-      #          filters:
-      #            - RewritePath=/identityCommand/(?<remaining>.*), /$\{remaining}
+            - Path=/api/v1/notification/**
 
-
-
-
-
-#      default-filters:
-#        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
-#      globalcors:
-#        corsConfigurations:
-#          '[/**]':
-#              allowedOrigins: "*"
-#              allowedMethods: "*"
-#              allowedHeaders: "*"
-
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"

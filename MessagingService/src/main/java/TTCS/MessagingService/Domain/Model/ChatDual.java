@@ -17,9 +17,6 @@ import java.util.Set;
 public class ChatDual {
     @Id
      String idChatDual;
-//     Set<String> idMessages = new HashSet<>();
      String idChatProfile1;
     String idChatProfile2;
-
-
 }

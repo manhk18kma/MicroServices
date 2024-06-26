@@ -1,5 +1,6 @@
 package TTCS.ProfileService.infranstructure.persistence.Service;
 
+import KMA.TTCS.CommonService.notification.NotificationInfor;
 import TTCS.ProfileService.application.Exception.AppException.AppErrorCode;
 import TTCS.ProfileService.application.Exception.AppException.AppException;
 import TTCS.ProfileService.domain.model.Follow;
@@ -17,8 +18,10 @@ import TTCS.ProfileService.presentation.command.dto.response.ProfileResponse;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Date;
 import java.util.Optional;
@@ -31,14 +34,23 @@ public class ProfileService {
     final ProfileRepository profileRepository;
     final FollowRepository followRepository;
     final FriendRepository friendRepository;
+    final  UploadImageServiceImpl uploadImageService;
+    final KafkaTemplate<String , Object> kafkaTemplate;
 
-//    @PreAuthorize("#profileUpdateRequest.idProfile == authentication.principal.claims['idAccount']  and hasRole('USER')")
     @PreAuthorize("#profileUpdateRequest.idProfile == authentication.name and hasRole('USER')")
     public ProfileResponse updateProfile(ProfileUpdateRequest profileUpdateRequest) {
         Optional<Profile> optionalProfile = profileRepository.findById(profileUpdateRequest.getIdProfile());
         if (!optionalProfile.isPresent()) {
             throw new AppException(AppErrorCode.PROFILE_NOT_EXISTED);
         }
+        String urlAvt = profileUpdateRequest.getUrlProfilePicture();
+        if(profileUpdateRequest.getUrlProfilePicture().length() > 0  && !profileUpdateRequest.getUrlProfilePicture().startsWith("http")){
+            System.out.println("base64");
+            urlAvt = updateAvt(urlAvt , optionalProfile.get().getIdProfile());
+        }
+
+
+
 
         Profile profileExisted = optionalProfile.get();
         profileExisted.setFullName(profileUpdateRequest.getFullName());
@@ -46,6 +58,7 @@ public class ProfileService {
         profileExisted.setBiography(profileUpdateRequest.getBiography());
         profileExisted.setUpdateAt(new Date());
         profileExisted.setGender(profileUpdateRequest.getGender());
+        profileExisted.setUrlProfilePicture(urlAvt);
 
         profileRepository.save(profileExisted);
 
@@ -54,83 +67,7 @@ public class ProfileService {
                 .build();
     }
 
-//    public FollowCreateResponse createFollow(FollowCreateRequest followCreateRequest) {
-//        Optional<Profile> optionalProfileFollower = profileRepository.findById(followCreateRequest.getIdProfileFollower());
-//        if (!optionalProfileFollower.isPresent()) {
-//            throw new AppException(AppErrorCode.PROFILE_NOT_EXISTED);
-//        }
-//
-//        Optional<Profile> optionalProfileTarget = profileRepository.findById(followCreateRequest.getIdProfileTarget());
-//        if (!optionalProfileTarget.isPresent()) {
-//            throw new AppException(AppErrorCode.PROFILE_NOT_EXISTED);
-//        }
-//        Profile profileFollower = optionalProfileFollower.get();
-//        Profile profileTarget = optionalProfileTarget.get();
-//
-//        Follow follow1 = followRepository.findByIdProfileFollowerAndIdProfileTarget(
-//                profileFollower.getIdProfile(),
-//                profileTarget.getIdProfile()
-//        );
-//        if(follow1!=null){
-//            throw new AppException(AppErrorCode.FOLLOW_EXISTED);
-//        }
-//
-//        Follow follow2 = followRepository.findByIdProfileFollowerAndIdProfileTarget(
-//                profileTarget.getIdProfile(),
-//                profileFollower.getIdProfile()
-//                );
-//
-//        if (follow2 == null) {
-//            return handleNotFollow(followCreateRequest, profileFollower, profileTarget);
-//        } else {
-//            return  handleFollow(followCreateRequest , profileFollower , profileTarget , follow2);
-//        }
-//
-//
-//    }
-//
-//    public FollowCreateResponse handleNotFollow(FollowCreateRequest followCreateRequest, Profile profileFollower, Profile profileTarget) {
-//
-//        Follow follow = Follow.builder()
-//                .idFollow(UUID.randomUUID().toString())
-//                .idProfileFollower(profileFollower.getIdProfile())
-//                .idProfileTarget(profileTarget.getIdProfile())
-//                .since(new Date())
-//                .build();
-//        profileFollower.getFollowing().add(follow);
-//        profileTarget.getFollower().add(follow);
-//        followRepository.save(follow);
-//        profileRepository.save(profileFollower);
-//        profileRepository.save(profileTarget);
-//
-//
-//        return FollowCreateResponse.builder()
-//                .idProfileFollower(profileFollower.getIdProfile())
-//                .idProfileTarget(profileTarget.getIdProfile())
-//                .build();
-//    }
-//    public FollowCreateResponse handleFollow(FollowCreateRequest followCreateRequest, Profile profileFollower, Profile profileTarget, Follow follow) {
-//        followRepository.delete(follow);
-//
-//        Friend friend = Friend.builder()
-//                .idFriend(UUID.randomUUID().toString())
-//                .idProfile1(profileFollower.getIdProfile())
-//                .idProfile2(profileTarget.getIdProfile())
-//                .since(new Date())
-//                .build();
-//        profileFollower.getFriendShip().add(friend);
-//        profileTarget.getFriendShip().add(friend);
-//
-//        friendRepository.save(friend);
-//        profileRepository.save(profileFollower);
-//        profileRepository.save(profileTarget);
-//
-//
-//        return FollowCreateResponse.builder()
-//                .idProfileFollower(profileFollower.getIdProfile())
-//                .idProfileTarget(profileTarget.getIdProfile())
-//                .build();
-//    }
+
     @PreAuthorize("#followCreateRequest.idProfileFollower == authentication.name and hasRole('USER')")
     public FollowCreateResponse createFollow(FollowCreateRequest followCreateRequest) {
     Profile profileFollower = profileRepository.findById(followCreateRequest.getIdProfileFollower())
@@ -176,7 +113,6 @@ public class ProfileService {
 }
 
     private FollowCreateResponse handleNotFollow(Profile profileFollower, Profile profileTarget) {
-        System.out.println("1");
         Follow follow = Follow.builder()
                 .idFollow(UUID.randomUUID().toString())
                 .idProfileFollower(profileFollower.getIdProfile())
@@ -190,6 +126,9 @@ public class ProfileService {
         followRepository.save(follow);
         profileRepository.save(profileFollower);
         profileRepository.save(profileTarget);
+        String message = "nameTarget has started following you! Stay tuned for their latest updates.";
+        NotificationInfor notificationInfor = buildNotificationInfor(profileFollower , profileTarget , "CREATE_FOLLOW" , message);
+        kafkaTemplate.send("create_follow_topic" , notificationInfor);
 
         return FollowCreateResponse.builder()
                 .idProfileFollower(profileFollower.getIdProfile())
@@ -198,7 +137,6 @@ public class ProfileService {
     }
 
     private FollowCreateResponse handleFollow(Profile profileFollower, Profile profileTarget, Follow existingFollow) {
-        System.out.println("2");
         Friend friend = Friend.builder()
                 .idFriend(UUID.randomUUID().toString())
                 .idProfile1(profileFollower.getIdProfile())
@@ -209,6 +147,9 @@ public class ProfileService {
         profileFollower.getFriendShip().add(friend);
         profileTarget.getFriendShip().add(friend);
 
+        String message = "You and nameTarget are now friends! Stay tuned for their latest updates.";
+        NotificationInfor notificationInfor = buildNotificationInfor(profileFollower , profileTarget , "CREATE_FRIEND" , message);
+        kafkaTemplate.send("create_friend_topic" , notificationInfor);
 
         friendRepository.save(friend);
         profileRepository.save(profileFollower);
@@ -266,5 +207,27 @@ public class ProfileService {
         }
         String idFriend = existingFriend1 == null ? existingFriend2.getIdFriend() : existingFriend1.getIdFriend();
         friendRepository.deleteById(idFriend);
+    }
+
+
+    private NotificationInfor buildNotificationInfor(Profile profileFollower, Profile profileTarget , String type, String message){
+        NotificationInfor notificationInfor = new NotificationInfor();
+        notificationInfor.setProfileSenderId(profileFollower.getIdProfile());
+        notificationInfor.setProfileReceiverId(profileTarget.getIdProfile());
+        notificationInfor.setNotificationType(type);
+        notificationInfor.setTimestamp(new Date());
+        notificationInfor.setMessage(message);
+        return notificationInfor;
+
+    }
+
+
+
+    public String updateAvt(String urlAtv , String idProfile){
+        String idImg = UUID.randomUUID().toString();
+        String base64 = urlAtv;
+            MultipartFile multipartFileAvt = Base64ToMultipartFileConverter.convert(base64);
+            String urlAvt = uploadImageService.uploadImage(multipartFileAvt, "Image_" + idImg);
+            return urlAvt;
     }
 }

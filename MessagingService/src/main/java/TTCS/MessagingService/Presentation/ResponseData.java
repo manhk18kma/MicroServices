@@ -1,8 +1,9 @@
 package TTCS.MessagingService.Presentation;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Builder;
 
 import java.util.Date;
-
+@Builder
 
 public class ResponseData<T> {
     private int status;
@@ -22,6 +23,12 @@ public ResponseData(int status, String message, T data) {
     this.message = message;
     this.data = data;
 }
+
+    public ResponseData(int status, String message, Date timestamp) {
+        this.status = status;
+        this.message = message;
+        this.timestamp = timestamp;
+    }
 
     public ResponseData(int status, String message, Date timestamp, T data) {
         this.status = status;

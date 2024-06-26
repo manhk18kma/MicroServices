@@ -7,6 +7,7 @@ import KMA.TTCS.CommonService.query.FriendsQuery;
 import KMA.TTCS.CommonService.query.ProfileMessageQuery;
 import TTCS.MessagingService.Application.Exception.AppException.AppErrorCode;
 import TTCS.MessagingService.Application.Exception.AppException.AppException;
+import TTCS.MessagingService.Domain.Model.ChatDual;
 import TTCS.MessagingService.Domain.Model.ChatProfile;
 import TTCS.MessagingService.Domain.Model.Status;
 import TTCS.MessagingService.Presentation.DTO.Request.CheckChatRequest;
@@ -17,6 +18,7 @@ import TTCS.MessagingService.Presentation.DTO.Response.ContactsResponse;
 import TTCS.MessagingService.Presentation.DTO.Response.DisconnectResponse;
 import TTCS.MessagingService.Presentation.DTO.Response.FriendsResponse;
 import TTCS.MessagingService.Presentation.PageResponse;
+import TTCS.MessagingService.infrastructure.persistence.Repository.ChatDualRepository;
 import TTCS.MessagingService.infrastructure.persistence.Repository.ProfileChatRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ import org.axonframework.queryhandling.NoHandlerForQueryException;
 import org.axonframework.queryhandling.QueryExecutionException;
 import org.axonframework.queryhandling.QueryGateway;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -42,13 +45,9 @@ public class ProfileChatService {
     final ProfileChatRepository profileChatRepository;
     final QueryGateway queryGateway;
     final SimpMessagingTemplate simpMessagingTemplate;
+    final ChatDualRepository chatDualRepository;
 
-    public void checkChat(CheckChatRequest checkChatRequest) {
-        ChatProfile chatProfile = profileChatRepository.findByIdProfile(checkChatRequest.getIdProfile());
-
-        chatProfile.getChatRoomChecked().put(checkChatRequest.getIdChat() , true);
-        profileChatRepository.save(chatProfile);
-    }
+    @PreAuthorize("#idChatProfile == authentication.principal.claims['idChatProfile']  and hasRole('USER')")
     public PageResponse<?> getAllFriends(String idChatProfile, int pageNo, int pageSize) {
         Optional<ChatProfile> chatProfileOptional = profileChatRepository.findById(idChatProfile);
         if (!chatProfileOptional.isPresent()){
@@ -138,7 +137,21 @@ public class ProfileChatService {
                 .status(profileDisConnected.getStatus())
                 .build();}
 
+    @PreAuthorize("#idChatProfile == authentication.principal.claims['idChatProfile']  and hasRole('USER')")
+    public void removeChat(String idChat, String idChatProfile) {
+        ChatProfile chatProfile = profileChatRepository.findById(idChatProfile)
+                .orElseThrow(() -> new AppException(AppErrorCode.CHAT_PROFILE_NOT_EXISTED));
 
+        ChatDual chatDual = chatDualRepository.findById(idChat)
+                .orElseThrow(() -> new AppException(AppErrorCode.CHAT_NOT_EXISTED));
+        System.out.println(chatProfile.getChatRoomLastUsed().containsKey(chatDual.getIdChatDual()));
+        if (!chatProfile.getChatRoomLastUsed().containsKey(chatDual.getIdChatDual())) {
+            throw new AppException(AppErrorCode.CHAT_NOT_EXISTED);
+        }
 
+        chatProfile.getChatRoomChecked().remove(chatDual.getIdChatDual());
+        chatProfile.getChatRoomLastUsed().remove(chatDual.getIdChatDual());
+        profileChatRepository.save(chatProfile);
+    }
 
 }

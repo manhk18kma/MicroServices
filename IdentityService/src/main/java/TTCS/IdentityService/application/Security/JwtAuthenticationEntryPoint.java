@@ -35,7 +35,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 @Override
 public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException)
         throws IOException, ServletException {
-
+    System.out.println("here");
     AppErrorCode errorCode = AppErrorCode.UNAUTHENTICATED;
     response.setStatus(errorCode.getStatusCode().value());
     response.setContentType(MediaType.APPLICATION_JSON_VALUE);

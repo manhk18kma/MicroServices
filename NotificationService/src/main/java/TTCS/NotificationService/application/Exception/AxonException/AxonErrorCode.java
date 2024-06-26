@@ -6,7 +6,9 @@ import org.springframework.http.HttpStatusCode;
 
 @Getter
 public enum AxonErrorCode {
-    UNCATEGORIZED_EXCEPTION(2999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR);
+    UNCATEGORIZED_EXCEPTION(2999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
+    AGGREGATE_NOT_FOUND_EXCEPTION(2000, "The aggregate was not found in the event store", HttpStatus.INTERNAL_SERVER_ERROR);
+
 
 
     AxonErrorCode(int code, String message, HttpStatusCode statusCode) {

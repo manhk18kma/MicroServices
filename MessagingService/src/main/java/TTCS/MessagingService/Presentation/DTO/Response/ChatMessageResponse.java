@@ -13,6 +13,7 @@ import java.util.Date;
 @AllArgsConstructor
 public class ChatMessageResponse {
     String idChatMessage;
+    String idChat;
     String content;
     String idChatProfileSender;
     String fullNameSender;

@@ -126,6 +126,7 @@ public class AuthenticationService {
                 .jwtID(UUID.randomUUID().toString())
                 .claim("scope", buildScope(account))
                 .claim("idAccount" , account.getIdAccount())
+                .claim("idChatProfile" , account.getIdChatProfile())
                 .build();
 
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());

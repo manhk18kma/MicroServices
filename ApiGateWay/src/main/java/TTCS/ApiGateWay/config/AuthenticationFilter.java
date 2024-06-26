@@ -37,8 +37,9 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 
     @NonFinal
     private String[] publicEndpoints = {
-            "/identityCommand/createAccount",
-            "/auth/.*",
+            "/api/v1/auth/.*",
+            "/api/v1/accounts",
+//            "/**"
     };
 
 

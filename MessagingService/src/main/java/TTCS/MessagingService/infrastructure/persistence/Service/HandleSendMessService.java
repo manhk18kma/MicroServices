@@ -92,15 +92,16 @@ public class HandleSendMessService {
         ProfileMessageResponse profileMessageResponse = future.join();
         ChatMessageResponse chatMessageResponse =  ChatMessageResponse.builder()
                 .idChatMessage(chatMessage.getIdChatMessage())
+                .idChat(chatDual.getIdChatDual())
                 .content(chatMessage.getContent())
                 .idChatProfileSender(chatProfileSender.getIdChatProfile())
                 .fullNameSender(profileMessageResponse.getFullName())
                 .urlAvtSender(profileMessageResponse.getUrlProfilePicture())
                 .timeStamp(chatMessage.getTimeStamp()).build();
-        simpMessagingTemplate.convertAndSendToUser(chatDual.getIdChatDual(), "/private", chatMessageResponse);
 
-//        simpMessagingTemplate.convertAndSendToUser(chatProfileSender.getIdChatProfile(), "/private", chatMessageResponse);
-//        simpMessagingTemplate.convertAndSendToUser(chatProfileReceiver.getIdChatProfile(), "/private", chatMessageResponse);
+        simpMessagingTemplate.convertAndSendToUser(chatDual.getIdChatDual(), "/private", chatMessageResponse);
+        simpMessagingTemplate.convertAndSendToUser(chatProfileSender.getIdChatProfile(), "/chats", chatMessageResponse);
+        simpMessagingTemplate.convertAndSendToUser(chatProfileReceiver.getIdChatProfile(), "/chats", chatMessageResponse);
     }
     private void updateChatProfilesForChatDual(ChatDual chatDual, ChatProfile chatProfileSender, ChatProfile chatProfileReceiver, ChatMessage chatMessage) {
         Date now = new Date();

@@ -25,7 +25,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.queryhandling.QueryGateway;
 import org.springframework.beans.BeanUtils;
@@ -33,7 +32,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import javax.management.Query;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Optional;
@@ -103,20 +101,19 @@ public class AccountCommandService {
     }
 
 
-//    @PreAuthorize("#accountActiveRequest.idAccount == authentication.principal.claims['idAccount']  and hasRole('USER')")
-    public CompletableFuture<AccountCommandResponse> activeAccount(AccountActiveRequest accountActiveRequest) {
-        Optional<Account> account = accountRepository.findById(accountActiveRequest.getIdAccount());
-        if(!account.isPresent()){
+    public CompletableFuture<AccountCommandResponse> activeAccount(AccountActiveRequest accountActiveRequest, String email) {
+        Account account = accountRepository.findByEmail(email);
+        if(account==null){
             throw new AppException(AppErrorCode.ACCOUNT_NOT_EXISTED);
         }
         AccountActiveCommand accountActiveCommand = AccountActiveCommand.builder()
-                .idAccount(accountActiveRequest.getIdAccount())
+                .idAccount(account.getIdAccount())
                 .otp(accountActiveRequest.getOtp())
                 .status(UserStatus.ACTIVE)
                 .executeAt(new Date())
                 .build();
         CompletableFuture<String> future = new CompletableFuture<>();
-        FutureTracker.futures.put(accountActiveRequest.getIdAccount(), future);
+        FutureTracker.futures.put(account.getIdAccount(), future);
         commandGateway.sendAndWait(accountActiveCommand);
         return future.thenApply(result -> {
             AccountCommandResponse accountCommandResponse = new AccountCommandResponse();

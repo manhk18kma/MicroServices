@@ -8,8 +8,13 @@ import org.springframework.http.HttpStatusCode;
 public enum AppErrorCode {
 //    ProfileController
     CHAT_PROFILE_NOT_EXISTED(3001, "Chat profile does not exist", HttpStatus.BAD_REQUEST),
-    FOLLOW_EXISTED(2002, "Already follow", HttpStatus.BAD_REQUEST),
-    FRIEND_EXISTED(2003, "Already friend", HttpStatus.BAD_REQUEST),
+    CHAT_NOT_EXISTED(3001, "Chat  does not exist", HttpStatus.BAD_REQUEST),
+    FRIEND_EXISTED(3002, "Already friend", HttpStatus.BAD_REQUEST),
+
+
+
+
+
     FOLLOW_NOT_EXISTED(2004, "Follow does not existed", HttpStatus.BAD_REQUEST),
     FRIEND_NOT_EXISTED(2005, "Friend does not existed", HttpStatus.BAD_REQUEST),
 

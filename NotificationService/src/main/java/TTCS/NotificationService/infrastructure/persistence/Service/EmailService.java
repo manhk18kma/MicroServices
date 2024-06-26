@@ -42,7 +42,7 @@ public class EmailService {
             message.setText("Your OTP code is: " + otpCode);
             javaMailSender.send(message);
         } catch (AppException e) {
-            throw new AppException(AppErrorCode.EMAIL_NOT_FOUND);
+            throw new AppException(AppErrorCode.UNCATEGORIZED_EXCEPTION);
         }
 
     }

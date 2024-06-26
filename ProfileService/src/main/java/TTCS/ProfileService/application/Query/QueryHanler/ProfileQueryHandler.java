@@ -1,10 +1,14 @@
 package TTCS.ProfileService.application.Query.QueryHanler;
 
 import KMA.TTCS.CommonService.PageResponseCom;
+import KMA.TTCS.CommonService.model.FriendsOrFollowingResponse;
 import KMA.TTCS.CommonService.model.FriendsResponseCom;
 import KMA.TTCS.CommonService.model.ProfileMessageResponse;
+import KMA.TTCS.CommonService.model.ProfileNotificationResponse;
+import KMA.TTCS.CommonService.query.FriendsOrFollowingQuery;
 import KMA.TTCS.CommonService.query.FriendsQuery;
 import KMA.TTCS.CommonService.query.ProfileMessageQuery;
+import KMA.TTCS.CommonService.query.ProfileNotificationQuery;
 import TTCS.ProfileService.application.Exception.AppException.AppErrorCode;
 import TTCS.ProfileService.application.Exception.AppException.AppException;
 import TTCS.ProfileService.application.Query.Query.*;
@@ -204,5 +208,42 @@ public class ProfileQueryHandler {
                 query.getPageNo(),
                 list
         );
+    }
+
+
+    @QueryHandler
+    public ProfileNotificationResponse handle(ProfileNotificationQuery query) {
+        Profile profile = profileRepository.findById(query.getIdProfile())
+                .orElseThrow(() -> new AppException(AppErrorCode.PROFILE_NOT_EXISTED));
+        return new ProfileNotificationResponse(profile.getFullName() , profile.getUrlProfilePicture());
+    }
+
+    @QueryHandler
+    public List<FriendsOrFollowingResponse> handle(FriendsOrFollowingQuery query) {
+        Profile profile = profileRepository.findById(query.getIdProfile())
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
+
+        List<String> idProfiles = new ArrayList<>();
+
+        profile.getFollowing().forEach(follow -> idProfiles.add(follow.getIdProfileTarget()));
+
+        profile.getFriendShip().forEach(friend -> {
+            String idProfileTarget = friend.getIdProfile1().equals(query.getIdProfile())
+                    ? friend.getIdProfile2()
+                    : friend.getIdProfile1();
+            idProfiles.add(idProfileTarget);
+        });
+
+        List<Profile> profiles = profileRepository.findAllById(idProfiles);
+
+        List<FriendsOrFollowingResponse> responses = profiles.stream().map(profileTarget ->
+                new FriendsOrFollowingResponse(
+                        profileTarget.getIdProfile(),
+                        profileTarget.getFullName(),
+                        profileTarget.getUrlProfilePicture()
+                )
+        ).collect(Collectors.toList());
+
+        return responses;
     }
 }

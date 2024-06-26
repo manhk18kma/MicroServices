@@ -8,9 +8,12 @@ import TTCS.MessagingService.Domain.Model.ChatDual;
 import TTCS.MessagingService.Domain.Model.ChatMessage;
 import TTCS.MessagingService.Domain.Model.ChatProfile;
 import TTCS.MessagingService.Domain.Model.ChatRoom;
+import TTCS.MessagingService.Presentation.DTO.Request.CheckChatRequest;
 import TTCS.MessagingService.Presentation.DTO.Response.ChatMessageResponse;
+import TTCS.MessagingService.Presentation.DTO.Response.CheckChatResponse;
 import TTCS.MessagingService.Presentation.DTO.Response.ContactsResponse;
 import TTCS.MessagingService.Presentation.PageResponse;
+import TTCS.MessagingService.Presentation.ResponseData;
 import TTCS.MessagingService.infrastructure.persistence.Repository.ChatDualRepository;
 import TTCS.MessagingService.infrastructure.persistence.Repository.ChatMessageRepository;
 import TTCS.MessagingService.infrastructure.persistence.Repository.ChatRoomRepository;
@@ -20,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.QueryGateway;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -39,14 +43,15 @@ public class ChatMessageService {
     final ChatRoomRepository chatRoomRepository;
     final ChatDualRepository chatDualRepository;
     final QueryGateway queryGateway;
-
-
-    public PageResponse<List<ContactsResponse>> getAllContacts(String icChatProfile, int pageNo, int pageSize){
-        Optional<ChatProfile> chatProfileOptional = profileChatRepository.findById(icChatProfile);
+    @PreAuthorize("#idChatProfile == authentication.principal.claims['idChatProfile']  and hasRole('USER')")
+    public PageResponse<List<ContactsResponse>> getChats(String idChatProfile, int pageNo, int pageSize){
+        Optional<ChatProfile> chatProfileOptional = profileChatRepository.findById(idChatProfile);
         if (!chatProfileOptional.isPresent()){
             throw  new AppException(AppErrorCode.CHAT_PROFILE_NOT_EXISTED);
         }
         ChatProfile chatProfile = chatProfileOptional.get();
+        System.out.println(chatProfile.getChatRoomLastUsed().size());
+
         Map<String , Date> sortedMap = sortByValue(chatProfile.getChatRoomLastUsed());
         List<ContactsResponse> contactsResponses = new ArrayList<>();
         int startIndex = pageNo * pageSize;
@@ -71,7 +76,6 @@ public class ChatMessageService {
                                     .lastUsed(date)
                                     .urlImageChatRoom(chatRoom.getUrlImageChatRoom())
                                     .isChecked(chatProfile.getChatRoomChecked().get(s))
-                                    .countMessages(count.get())
                                     .build()
                     );
                 } else if (chatDualOptional.isPresent()) {
@@ -95,7 +99,6 @@ public class ChatMessageService {
                                     .lastUsed(date)
                                     .isChecked(chatProfile.getChatRoomChecked().get(s))
                                     .urlImageChatRoom(profileMessageResponse.getUrlProfilePicture())
-                                    .countMessages(count.get())
                                     .build()
                     );
                 } else {
@@ -130,7 +133,10 @@ public class ChatMessageService {
         return result;
     }
 
-    public PageResponse<List<ChatMessageResponse>> getAllMessages(String idChatRoomOrChatDual, int pageNo, int pageSize) {
+
+
+    @PreAuthorize("(#strings[0] == authentication.principal.claims['idChatProfile'] or #strings[1] == authentication.principal.claims['idChatProfile']) and hasRole('USER')")
+    public PageResponse<List<ChatMessageResponse>> getAllMessages(String idChatRoomOrChatDual, int pageNo, int pageSize, String[] strings) {
         Pageable pageable = PageRequest.of(pageNo, pageSize);
         Page<ChatMessage> chatMessages = chatMessageRepository.findAllByIdChatRoomChatDualOrderByTimeStampDesc(idChatRoomOrChatDual, pageable);
         List<ChatMessage> result = chatMessages.getContent();
@@ -143,6 +149,7 @@ public class ChatMessageService {
         CompletableFuture<ProfileMessageResponse> future = queryGateway.query(profileMessageQuery, ResponseTypes.instanceOf(ProfileMessageResponse.class));
         ProfileMessageResponse profileMessageResponse = future.join();
             responseList.add(ChatMessageResponse.builder()
+                    .idChat(chatMessage.getIdChatRoomChatDual())
                     .idChatMessage(chatMessage.getIdChatMessage())
                     .content(chatMessage.getContent())
                     .idChatProfileSender(chatMessage.getIdChatProfileSender())
@@ -159,22 +166,25 @@ public class ChatMessageService {
                 .items( responseList)
                 .build();
     }
+
+    public String[] getAllMessagesPrev(String idChat) {
+        ChatDual chatDual = chatDualRepository.findById(idChat)
+                .orElseThrow(() -> new AppException(AppErrorCode.CHAT_NOT_EXISTED));
+
+        return new String[]{chatDual.getIdChatProfile1(), chatDual.getIdChatProfile2()};
+    }
+
+
+
+    @PreAuthorize("#idChatProfile == authentication.principal.claims['idChatProfile']  and hasRole('USER')")
+
+    public CheckChatResponse checkChat(String idChatProfile , String idChat) {
+        ChatProfile chatProfile = profileChatRepository.findById(idChatProfile).orElseThrow(
+                ()->new AppException(AppErrorCode.CHAT_PROFILE_NOT_EXISTED)
+        );
+
+        chatProfile.getChatRoomChecked().put(idChat , true);
+        profileChatRepository.save(chatProfile);
+        return new CheckChatResponse(idChat);
+    }
 }
-//        List<String> sortedKeys = getKeysSortedByRecentTime(chatProfile.getChatRoomLastUsed());
-//        List<ChatRoom> chatRooms = sortedKeys.stream()
-//                .map(key -> chatRoomRepository.findById(key)
-//                        .orElseThrow(() -> new RuntimeException("ChatRoom not found")))
-//                .collect(Collectors.toList());
-//
-//
-//        List<ContactsResponse> contactsResponses = chatRooms.stream()
-//                .map(chatRoom -> ContactsResponse.builder()
-//                                .idChatRoom(chatRoom.getIdChatRoom())
-//                                .chatRoomName(chatRoom.getChatRoomName())
-//                                .lastUsed(
-//                                        chatProfile.getChatRoomLastUsed().get(chatRoom.getIdChatRoom())
-//                                )
-//                                .urlImageChatRoom(chatRoom.getUrlImageChatRoom())
-//                                .build()
-//                        )
-//                .collect(Collectors.toList());

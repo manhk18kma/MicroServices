@@ -5,6 +5,7 @@ import TTCS.ProfileService.application.Query.Response.FollowersDetailResponse;
 import TTCS.ProfileService.application.Query.Response.FollowingDetailResponse;
 import TTCS.ProfileService.application.Query.Response.FriendDetailResponse;
 import TTCS.ProfileService.application.Query.Response.ProfileDetailResponse;
+import TTCS.ProfileService.domain.enumType.TypeRelationship;
 import TTCS.ProfileService.domain.model.Follow;
 import TTCS.ProfileService.domain.model.Friend;
 import TTCS.ProfileService.domain.model.Profile;
@@ -12,18 +13,18 @@ import TTCS.ProfileService.infranstructure.persistence.FollowRepository;
 import TTCS.ProfileService.infranstructure.persistence.FriendRepository;
 import TTCS.ProfileService.infranstructure.persistence.ProfileRepository;
 import TTCS.ProfileService.presentation.query.dto.response.PageResponse;
+import TTCS.ProfileService.presentation.query.dto.response.SearchProfileResponse;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.axonframework.queryhandling.QueryHandler;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -114,13 +115,88 @@ public class ProfileQuery {
                 .build();
     }
 
-    public ProfileDetailResponse getById(String id) {
+    public ProfileDetailResponse getById(String id, String idProfileToken) {
+        Profile profileToken =  profileRepository.findById(id).orElseThrow(() -> new AppException(AppErrorCode.PROFILE_NOT_EXISTED));
+
+        Set<Follow> followers = profileToken.getFollower();
+        Set<Follow> following = profileToken.getFollowing();
+        Set<Friend> friends = profileToken.getFriendShip();
+
         Profile profile = profileRepository.findById(id).orElseThrow(() -> new AppException(AppErrorCode.PROFILE_NOT_EXISTED));
+
         ProfileDetailResponse profileDetailResponse = new ProfileDetailResponse();
         BeanUtils.copyProperties(profile , profileDetailResponse);
+        if (followers.stream().anyMatch(follow -> follow.getIdProfileFollower().equals(profile.getIdProfile()))) {
+            profileDetailResponse.setTypeRelationship(TypeRelationship.FOLLOWER);
+        } else if (following.stream().anyMatch(follow -> follow.getIdProfileTarget().equals(profile.getIdProfile()))) {
+            profileDetailResponse.setTypeRelationship(TypeRelationship.FOLLOWING);
+        } else if (friends.stream()
+                .anyMatch(friend -> friend.getIdProfile1().equals(profile.getIdProfile()) && friend.getIdProfile2().equals(profile.getIdProfile()))
+                || friends.stream()
+                .anyMatch(friend -> friend.getIdProfile1().equals(profile.getIdProfile()) && friend.getIdProfile2().equals(profile.getIdProfile()))) {
+            profileDetailResponse.setTypeRelationship(TypeRelationship.FRIEND);
+        } else if (profile.getIdProfile().equals(profile.getIdProfile())) {
+            profileDetailResponse.setTypeRelationship(TypeRelationship.YOU);
+        } else {
+            profileDetailResponse.setTypeRelationship(TypeRelationship.NONE);
+        }
+
+
+
+
         return profileDetailResponse;
 
     }
+
+    public PageResponse<List<SearchProfileResponse>> searchByName(String name, int pageNo, int pageSize, String idProfile) {
+        Profile profile = profileRepository.findById(idProfile).orElseThrow(
+                ()->new AppException(AppErrorCode.PROFILE_NOT_EXISTED)
+        );
+
+        Set<Follow> followers = profile.getFollower();
+        Set<Follow> following = profile.getFollowing();
+        Set<Friend> friends = profile.getFriendShip();
+        System.out.println(followers.size());
+        System.out.println(following.size());
+        System.out.println(friends.size());
+
+        Pageable pageable = PageRequest.of(pageNo, pageSize);
+        Page<Profile> page = profileRepository.findByFullNameContaining(name, pageable);
+
+        List<SearchProfileResponse> searchResponses = page.getContent().stream().map(profile1 -> {
+            SearchProfileResponse response = new SearchProfileResponse();
+            response.setFullName(profile1.getFullName());
+            response.setUrlAvt(profile1.getUrlProfilePicture());
+
+            // Determine relationship type
+
+            if (followers.stream().anyMatch(follow -> follow.getIdProfileFollower().equals(profile1.getIdProfile()))) {
+                response.setTypeRelationship(TypeRelationship.FOLLOWER);
+            } else if (following.stream().anyMatch(follow -> follow.getIdProfileTarget().equals(profile1.getIdProfile()))) {
+                response.setTypeRelationship(TypeRelationship.FOLLOWING);
+            } else if (friends.stream()
+                    .anyMatch(friend -> friend.getIdProfile1().equals(profile.getIdProfile()) && friend.getIdProfile2().equals(profile1.getIdProfile()))
+                    || friends.stream()
+                    .anyMatch(friend -> friend.getIdProfile1().equals(profile1.getIdProfile()) && friend.getIdProfile2().equals(profile.getIdProfile()))) {
+                response.setTypeRelationship(TypeRelationship.FRIEND);
+            } else if (profile.getIdProfile().equals(profile1.getIdProfile())) {
+                response.setTypeRelationship(TypeRelationship.YOU);
+            } else {
+                response.setTypeRelationship(TypeRelationship.NONE);
+            }
+
+            return response;
+        }).collect(Collectors.toList());
+        return PageResponse.<List<SearchProfileResponse>>builder()
+                .size(pageSize)
+                .totalElements((int) page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .number(pageNo)
+                .items(searchResponses)
+                .build();
+    }
+
+
 
 
 //    public List<Profile> handle(ProfileQueryGetAllFollowings queryGetAllFollowings) {

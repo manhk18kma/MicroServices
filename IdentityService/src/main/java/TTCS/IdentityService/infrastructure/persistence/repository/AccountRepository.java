@@ -1,6 +1,7 @@
 package TTCS.IdentityService.infrastructure.persistence.repository;
 
 import TTCS.IdentityService.domain.model.Account;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,13 +13,15 @@ import java.util.Optional;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 
 @Repository
-@RepositoryRestResource(path = "account")
+@Hidden
+//@RepositoryRestResource(path = "account")
 public interface AccountRepository extends JpaRepository<Account , String> {
     Account findByEmail(String email);
     boolean existsAccountByEmail(String email);
     boolean existsAccountByUsername(String username);
     Account findByUsername(String username);
     Account findByIdProfile(String username);
+
 
 
     Page<Account> findAllBy(Pageable pageable);

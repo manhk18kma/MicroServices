@@ -1,6 +1,7 @@
 package TTCS.ProfileService.application.Query.Response;
 
 import KMA.TTCS.CommonService.enumType.Gender;
+import TTCS.ProfileService.domain.enumType.TypeRelationship;
 import lombok.*;
 
 import java.util.Date;
@@ -19,5 +20,6 @@ public class ProfileDetailResponse {
     Date dateOfBirth;
     Date updateAt;
     String idAccount;
+    TypeRelationship typeRelationship;
 
 }

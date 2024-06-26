@@ -1,6 +1,8 @@
 package TTCS.MessagingService.Application.Exception;
 
 
+import TTCS.MessagingService.Application.Exception.AppException.AppException;
+import TTCS.MessagingService.Application.Exception.AxonException.AxonException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.axonframework.axonserver.connector.command.AxonServerRemoteCommandHandlingException;
@@ -92,6 +94,28 @@ public class GlobalExceptionHandler {
         errorResponse.setMessage(message);
         return errorResponse;
     }
+    @ExceptionHandler(AppException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleAppException(AppException e, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setTimestamp(new Date());
+        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
+        errorResponse.setStatus(e.getErrorCode().getCode());
+        errorResponse.setError(AppException.class.getSimpleName());
+        errorResponse.setMessage(e.getMessage());
+        return errorResponse;
+    }
 
+    @ExceptionHandler(AxonException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorResponse handleAxonException(AxonException e, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setTimestamp(new Date());
+        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
+        errorResponse.setStatus(e.getErrorCode().getCode());
+        errorResponse.setError(AxonException.class.getSimpleName());
+        errorResponse.setMessage(e.getMessage());
+        return errorResponse;
+    }
 }
 

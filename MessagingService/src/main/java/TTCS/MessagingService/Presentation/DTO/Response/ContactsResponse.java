@@ -18,6 +18,5 @@ public class ContactsResponse {
      Date lastUsed;
      Boolean isChecked;
      String urlImageChatRoom;
-     int countMessages;
 
 }

@@ -11,5 +11,5 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CheckChatRequest {
     String idChat;
-    String idProfile;
+    String idChatProfile;
 }

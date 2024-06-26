@@ -6,25 +6,16 @@ import KMA.TTCS.CommonService.event.AccountProfile.AccountGenerateOTPEvent;
 import KMA.TTCS.CommonService.event.AccountProfile.AccountRollBackEvent;
 import TTCS.IdentityService.application.Command.CommandEvent.Command.*;
 import TTCS.IdentityService.application.Command.CommandEvent.Event.*;
-import TTCS.IdentityService.application.Command.CommandService.DTO.OTPResponse;
 import TTCS.IdentityService.application.Exception.AppException.AppErrorCode;
 
 import TTCS.IdentityService.application.Exception.AppException.AppException;
-import TTCS.IdentityService.domain.enumType.Gender;
 import TTCS.IdentityService.domain.enumType.UserStatus;
-import TTCS.IdentityService.domain.model.Account;
 import TTCS.IdentityService.infrastructure.persistence.service.OTPService;
-import TTCS.IdentityService.presentation.command.dto.request.ProcessResult;
-import TTCS.IdentityService.presentation.command.dto.request.StartProcessCommand;
-import lombok.AccessLevel;
-import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
-import org.axonframework.modelling.saga.SagaLifecycle;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.springframework.beans.BeanUtils;
 
@@ -137,6 +128,7 @@ public class AccountAggregate {
             CompletableFuture<String> future = FutureTracker.futures.remove(command.getIdAccount());
             if (future != null) {
                 future.completeExceptionally( new AppException(AppErrorCode.OLD_PASSWORD_INVALID));
+                return;
             }
         }
         if (!otpService.verifyOTP(this.secretKey, command.getOtp())) {
@@ -144,6 +136,7 @@ public class AccountAggregate {
             CompletableFuture<String> future = FutureTracker.futures.remove(command.getIdAccount());
             if (future != null) {
                 future.completeExceptionally( new AppException(AppErrorCode.INVALID_OTP));
+                return;
             }
         }
         AccountChangePasswordEvent event = new AccountChangePasswordEvent();

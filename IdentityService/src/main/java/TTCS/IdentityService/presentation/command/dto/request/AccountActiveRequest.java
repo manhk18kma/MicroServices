@@ -1,16 +1,21 @@
 package TTCS.IdentityService.presentation.command.dto.request;
 
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-@Getter
-@FieldDefaults(level = AccessLevel.PRIVATE)
+import java.io.Serializable;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
-@Setter
-public class AccountActiveRequest {
-    String idAccount;
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class AccountActiveRequest implements Serializable {
+    @NotBlank(message = "otp must not be blank")
+    @NotNull(message = "otp must not be null")
+    @Size(min = 8, message = "otp must be at least 5 characters long")
     int otp;
 }

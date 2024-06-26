@@ -16,6 +16,8 @@ public interface ProfileRepository extends Neo4jRepository<Profile, String> {
 
     int countAllBy();
 
+    Page<Profile> findByFullNameContaining(String name, Pageable pageable);
+
 //    List<Profile> findByFollowing_IdProfileAndIdAccount(String followedProfileId, String userId);
 //    Page<Profile> findAllByFollowing_IdProfile(String id , Pageable pageable );
 
