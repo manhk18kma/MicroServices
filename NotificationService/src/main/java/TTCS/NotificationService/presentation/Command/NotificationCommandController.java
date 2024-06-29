@@ -27,13 +27,12 @@ public class NotificationCommandController {
 
     final NotificationProfileService notificationProfileService;
 
-    @PostMapping("/{idNotification}/profile/{idProfile}")
+    @PostMapping("/profile/{idProfile}")
     @Operation(summary = "Check Notification Status", description = "Check the status of a notification for a specific profile")
     public ResponseData<CheckNotificationResponse> checkNotification(
-            @PathVariable @Parameter(description = "ID of the chat profile", example = "123", required = true) String idProfile,
-            @PathVariable @Parameter(description = "ID of the chat", example = "456", required = true) String idNotification) {
+            @PathVariable @Parameter(description = "ID of the  profile", example = "123", required = true) String idProfile) {
 
-        CheckNotificationResponse response = notificationProfileService.checkNotification(idProfile, idNotification);
-        return new ResponseData<>(HttpStatus.CREATED.value(), "Checked chat successfully", new Date(), response);
+        CheckNotificationResponse response = notificationProfileService.checkNotification(idProfile);
+        return new ResponseData<>(HttpStatus.CREATED.value(), "Checked notifications successfully", new Date(), response);
     }
 }

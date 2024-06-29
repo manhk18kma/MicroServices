@@ -1,5 +1,6 @@
 package TTCS.MessagingService.Presentation.DTO.Response;
 
+import TTCS.MessagingService.Domain.Model.Status;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,5 +19,6 @@ public class ContactsResponse {
      Date lastUsed;
      Boolean isChecked;
      String urlImageChatRoom;
+     Status status;
 
 }

@@ -36,20 +36,20 @@ public class ProfileQueryController {
     final ProfileQueryService profileQueryService;
     final ProfileQuery profileQuery;
 
-//    @Operation(
-//            summary = "Get all profiles",
-//            description = "Retrieve a list of profiles with pagination and optional sorting"
-//    )
-//    @GetMapping("")    public ResponseData<PageResponse> getAll(
-//            @Parameter(description = "Page number (default: 0)")
-//            @RequestParam(defaultValue = "0") int pageNo,
-//            @Parameter(description = "Page size (default: 10)")
-//            @RequestParam(defaultValue = "10") int pageSize,
-//            @Parameter(description = "Field to sort by (optional)")
-//            @RequestParam(required = false) String sortBy) throws ExecutionException, InterruptedException {
-//        CompletableFuture<PageResponse> response = profileQueryService.getProfileWithSortBy(pageNo, pageSize);
-//        return new ResponseData<PageResponse>(HttpStatus.OK.value(), "accounts", response.get());
-//    }
+    @Operation(
+            summary = "Get all profiles",
+            description = "Retrieve a list of profiles with pagination and optional sorting"
+    )
+    @GetMapping("")    public ResponseData<PageResponse> getAll(
+            @Parameter(description = "Page number (default: 0)")
+            @RequestParam(defaultValue = "0") int pageNo,
+            @Parameter(description = "Page size (default: 10)")
+            @RequestParam(defaultValue = "10") int pageSize,
+            @Parameter(description = "Field to sort by (optional)")
+            @RequestParam(required = false) String sortBy) throws ExecutionException, InterruptedException {
+        CompletableFuture<PageResponse> response = profileQueryService.getProfileWithSortBy(pageNo, pageSize);
+        return new ResponseData<PageResponse>(HttpStatus.OK.value(), "accounts", response.get());
+    }
 
 
     @Operation(

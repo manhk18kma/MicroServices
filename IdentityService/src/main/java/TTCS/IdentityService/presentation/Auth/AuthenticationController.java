@@ -65,6 +65,7 @@ public class AuthenticationController {
             @RequestBody IntrospectRequest request
     ) throws ParseException, JOSEException {
         var result = authenticationService.introspect(request);
+        System.out.println(result.toString());
         return ResponseData.<IntrospectResponse>builder()
                 .status(HttpStatus.OK.value())
                 .message("Token introspection successful.")
@@ -84,7 +85,7 @@ public class AuthenticationController {
     ) throws ParseException, JOSEException {
         var result = authenticationService.refreshToken(request);
         return ResponseData.<AuthenticationResponse>builder()
-                .status(HttpStatus.OK.value())
+                .status(HttpStatus.CREATED.value())
                 .message("Token refreshed successfully.")
                 .data(result)
                 .timestamp(new Date())
@@ -104,7 +105,7 @@ public class AuthenticationController {
         String sub = authenticationService.extractSubject(request.getToken());
         accountCommandService.disConnect(sub);
         return ResponseData.<Void>builder()
-                .status(HttpStatus.NO_CONTENT.value())
+                .status(HttpStatus.CREATED.value())
                 .message("Logout successful.")
                 .timestamp(new Date())
                 .build();

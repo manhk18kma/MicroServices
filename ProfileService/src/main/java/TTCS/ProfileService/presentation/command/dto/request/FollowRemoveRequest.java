@@ -12,7 +12,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 public class FollowRemoveRequest {
-    @NotBlank(message = "idProfileFollower must not be blank")
+//    @NotBlank(message = "idProfileFollower must not be blank")
     String idProfileFollower;
 
     @NotBlank(message = "idProfileTarget must not be blank")

@@ -18,4 +18,6 @@ public class CommentResponse {
     String content;
     String idPost;
     String idProfile;
+    String fullName;
+    String urlAvt;
 }

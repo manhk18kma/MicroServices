@@ -99,10 +99,11 @@ public class ChatMessageService {
                                     .lastUsed(date)
                                     .isChecked(chatProfile.getChatRoomChecked().get(s))
                                     .urlImageChatRoom(profileMessageResponse.getUrlProfilePicture())
+                                    .status(chatProfile1.getStatus())
                                     .build()
                     );
                 } else {
-                    throw new RuntimeException("Chat room or dual chat not found");
+                    throw new AppException(AppErrorCode.CHAT_NOT_EXISTED);
                 }
             }
             currentIndex.set(currentIndex.get() + 1);
@@ -177,7 +178,6 @@ public class ChatMessageService {
 
 
     @PreAuthorize("#idChatProfile == authentication.principal.claims['idChatProfile']  and hasRole('USER')")
-
     public CheckChatResponse checkChat(String idChatProfile , String idChat) {
         ChatProfile chatProfile = profileChatRepository.findById(idChatProfile).orElseThrow(
                 ()->new AppException(AppErrorCode.CHAT_PROFILE_NOT_EXISTED)

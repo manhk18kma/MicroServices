@@ -11,5 +11,5 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @AllArgsConstructor
 public class CheckNotificationResponse {
-    String idNotification;
+    String idProfile;
 }

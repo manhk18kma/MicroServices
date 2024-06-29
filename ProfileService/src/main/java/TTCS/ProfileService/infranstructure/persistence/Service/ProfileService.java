@@ -127,7 +127,7 @@ public class ProfileService {
         profileRepository.save(profileFollower);
         profileRepository.save(profileTarget);
         String message = "nameTarget has started following you! Stay tuned for their latest updates.";
-        NotificationInfor notificationInfor = buildNotificationInfor(profileFollower , profileTarget , "CREATE_FOLLOW" , message);
+        NotificationInfor notificationInfor = buildNotificationInfor(profileFollower , profileTarget , message);
         kafkaTemplate.send("create_follow_topic" , notificationInfor);
 
         return FollowCreateResponse.builder()
@@ -148,7 +148,7 @@ public class ProfileService {
         profileTarget.getFriendShip().add(friend);
 
         String message = "You and nameTarget are now friends! Stay tuned for their latest updates.";
-        NotificationInfor notificationInfor = buildNotificationInfor(profileFollower , profileTarget , "CREATE_FRIEND" , message);
+        NotificationInfor notificationInfor = buildNotificationInfor(profileFollower , profileTarget  , message);
         kafkaTemplate.send("create_friend_topic" , notificationInfor);
 
         friendRepository.save(friend);
@@ -210,11 +210,11 @@ public class ProfileService {
     }
 
 
-    private NotificationInfor buildNotificationInfor(Profile profileFollower, Profile profileTarget , String type, String message){
+    private NotificationInfor buildNotificationInfor(Profile profileFollower, Profile profileTarget , String message){
         NotificationInfor notificationInfor = new NotificationInfor();
         notificationInfor.setProfileSenderId(profileFollower.getIdProfile());
         notificationInfor.setProfileReceiverId(profileTarget.getIdProfile());
-        notificationInfor.setNotificationType(type);
+        notificationInfor.setIdTarget(profileFollower.getIdProfile());
         notificationInfor.setTimestamp(new Date());
         notificationInfor.setMessage(message);
         return notificationInfor;

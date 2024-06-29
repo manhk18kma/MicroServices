@@ -19,6 +19,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.QueryGateway;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -32,6 +33,7 @@ public class ProfileQueryService {
     final QueryGateway queryGateway;
     final ProfileRepository profileRepository;
     final FriendRepository friendRepository;
+    @PreAuthorize("hasRole('ADMIN')")
     public CompletableFuture<PageResponse> getProfileWithSortBy(int pageNo, int pageSize) {
         ProfileQueryGetAll profileQueryGetAll = new ProfileQueryGetAll(pageNo, pageSize);
         int totalElements = profileRepository.countAllBy();

@@ -1,5 +1,7 @@
 package TTCS.PostService.DTO.Comment.Request;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -11,6 +13,12 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 public class UpdateCommentRequest {
+    @JsonProperty("content")
     String content;
-    String idProfile;
+
+
+    @JsonCreator
+    public UpdateCommentRequest(@JsonProperty("content") String content) {
+        this.content = content;
+    }
 }

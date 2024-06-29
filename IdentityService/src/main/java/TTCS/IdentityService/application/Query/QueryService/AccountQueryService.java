@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.QueryGateway;
 import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -33,7 +34,7 @@ public class AccountQueryService {
     final AccountService accountService;
     final QueryGateway queryGateway;
 
-
+    @PreAuthorize("hasRole('ADMIN')")
     public CompletableFuture<PageResponse> getAllAccountWithSortBy(int pageNo, int pageSize) {
         AccountQueryGetAll accountQueryGetAll = new AccountQueryGetAll(pageNo, pageSize);
         int totalElements = accountRepository.countAllBy();
@@ -62,7 +63,7 @@ public class AccountQueryService {
         });
     }
 
-
+    @PreAuthorize("#id == authentication.principal.claims['idAccount']  and hasRole('USER')")
     public CompletableFuture<AccountDetailsResponse> getById(String id) {
         AccountQueryGetById accountQueryGetById = new AccountQueryGetById(id);
         CompletableFuture future = queryGateway.query(accountQueryGetById, ResponseTypes.instanceOf(Account.class));

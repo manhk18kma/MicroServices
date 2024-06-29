@@ -18,4 +18,6 @@ public interface PostRepository extends JpaRepository<Post, String> {
     @Query("SELECT p FROM Post p WHERE p.idProfile IN :idProfiles ORDER BY p.updateAt DESC")
     Page<Post> findByIdProfileInOrderByUpdateAtDesc(@Param("idProfiles") List<String> idProfiles, Pageable pageable);
 
+    Page<Post> findByIdProfileOrderByUpdateAtDesc(String idProfile , Pageable pageable);
+
 }

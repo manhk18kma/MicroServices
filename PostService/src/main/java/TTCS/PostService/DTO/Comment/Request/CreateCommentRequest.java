@@ -13,5 +13,4 @@ import lombok.experimental.FieldDefaults;
 public class CreateCommentRequest {
     String content;
     String idPost;
-    String idProfile;
 }

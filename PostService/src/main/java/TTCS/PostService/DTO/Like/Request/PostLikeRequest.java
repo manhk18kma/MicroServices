@@ -1,5 +1,7 @@
 package TTCS.PostService.DTO.Like.Request;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -11,7 +13,12 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 public class PostLikeRequest {
+    @JsonProperty("idPost")
     String idPost;
-    String idProfile;
 
+
+    @JsonCreator
+    public PostLikeRequest(@JsonProperty("idPost") String idPost) {
+        this.idPost = idPost;
+    }
 }

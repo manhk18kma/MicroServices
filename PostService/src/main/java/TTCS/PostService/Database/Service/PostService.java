@@ -1,12 +1,16 @@
 package TTCS.PostService.Database.Service;
 
 import KMA.TTCS.CommonService.model.FriendsOrFollowingResponse;
+import KMA.TTCS.CommonService.model.ProfileMessageResponse;
 import KMA.TTCS.CommonService.query.FriendsOrFollowingQuery;
+import KMA.TTCS.CommonService.query.ProfileMessageQuery;
 import TTCS.PostService.DTO.PageResponse;
 import TTCS.PostService.DTO.Post.Request.CreatePostRequest;
+import TTCS.PostService.DTO.Post.Request.DeletePostRequest;
 import TTCS.PostService.DTO.Post.Request.UpdatePostRequest;
 import TTCS.PostService.DTO.Post.Response.PostFriendsOrFollowingResponse;
 import TTCS.PostService.DTO.Post.Response.PostResponse;
+import TTCS.PostService.Database.Messaging.MessagingService;
 import TTCS.PostService.Database.Repository.ImageRepository;
 import TTCS.PostService.Database.Repository.PostRepository;
 import TTCS.PostService.Entity.Image;
@@ -22,6 +26,7 @@ import org.axonframework.queryhandling.QueryGateway;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
 
@@ -40,14 +45,23 @@ public class PostService {
     ImageRepository imageRepository;
     UploadImageServiceImpl uploadImageService;
     QueryGateway queryGateway;
+    MessagingService messagingService;
 
     @Transactional
-    public PostResponse createPost(CreatePostRequest createPostRequest) {
+    @PreAuthorize("hasRole('USER')")
+    public PostResponse createPost(CreatePostRequest createPostRequest, String idProfileToken) {
+        ProfileMessageResponse profileMessageResponse;
+            ProfileMessageQuery profileMessageQuery = new ProfileMessageQuery(idProfileToken, -1, -1);
+            CompletableFuture<ProfileMessageResponse> future = queryGateway.query(profileMessageQuery, ResponseTypes.instanceOf(ProfileMessageResponse.class));
+            profileMessageResponse = future.join();
+        if(profileMessageResponse==null){
+             throw  new AppException(AppErrorCode.PROFILE_NOT_EXISTED);
+        }
         Post post = Post.builder()
                 .idPost(UUID.randomUUID().toString())
                 .caption(createPostRequest.getCaption())
                 .updateAt(new Date())
-                .idProfile(createPostRequest.getIdProfile())
+                .idProfile(idProfileToken)
                 .comments(new ArrayList<>())
                 .images(new ArrayList<>())
                 .likes(new ArrayList<>())
@@ -74,26 +88,38 @@ public class PostService {
                 .map(Image::getUrlImage)
                 .collect(Collectors.toList());
 
+
+        String message = "nameTarget just posted something new! Let's interact together.";
+        messagingService.sendToKafka(message , idProfileToken,null , post.getIdPost(),"create_post_topic" , post.getIdPost());
+
+
+
+
+
+
         return PostResponse.builder()
                 .idPost(post.getIdPost())
                 .caption(post.getCaption())
                 .updateAt(post.getUpdateAt())
                 .idProfile(post.getIdProfile())
                 .images(imageUrls)
+                .fullName(profileMessageResponse.getFullName())
+                .urlAvt(profileMessageResponse.getUrlProfilePicture())
                 .build();
     }
+
+
     @Transactional
-    public String deletePost(String idPost) {
-        Post post = postRepository.findById(idPost)
-                .orElseThrow(() -> new AppException(AppErrorCode.POST_NOT_EXISTED));;
-        post.getImages().forEach(image -> uploadImageService.deleteImage(image.getUrlImage()));
-        postRepository.deleteById(idPost);
-        return idPost;
+    @PreAuthorize("#post.idProfile == authentication.name and hasRole('USER')")
+    public void deletePost(Post post) {
+        messagingService.sendDataToServiceB(post.getIdPost());
+        postRepository.delete(post);
     }
-    public PostResponse updatePost(UpdatePostRequest updatePostRequest, String idPost) {
-        // Retrieve the post from repository
-        Post post = postRepository.findById(idPost)
-                .orElseThrow(() -> new AppException(AppErrorCode.POST_NOT_EXISTED));
+
+
+    @PreAuthorize("#post.idProfile == authentication.name and hasRole('USER')")
+    public PostResponse updatePost(UpdatePostRequest updatePostRequest, Post post) {
+
 
         post.setUpdateAt(new Date());
         post.setCaption(updatePostRequest.getCaption());
@@ -132,7 +158,9 @@ public class PostService {
 
         // Save the updated post
         postRepository.save(post);
-
+        ProfileMessageQuery profileMessageQuery = new ProfileMessageQuery(post.getIdProfile(), -1, -1);
+        CompletableFuture<ProfileMessageResponse> future = queryGateway.query(profileMessageQuery, ResponseTypes.instanceOf(ProfileMessageResponse.class));
+        ProfileMessageResponse profileMessageResponse = future.join();
         // Build and return the response
         return PostResponse.builder()
                 .idPost(post.getIdPost())
@@ -140,13 +168,20 @@ public class PostService {
                 .updateAt(post.getUpdateAt())
                 .idProfile(post.getIdProfile())
                 .images(post.getImages().stream().map(Image::getUrlImage).collect(Collectors.toList()))
+                .fullName(profileMessageResponse.getFullName())
+                .urlAvt(profileMessageResponse.getUrlProfilePicture())
                 .build();
     }
 
-    @Transactional
-    public void deleteImage(String imageId) {
-        imageRepository.deleteById(imageId);
+
+    public Post prevCheck(String idPost){
+        Post post = postRepository.findById(idPost)
+                .orElseThrow(() -> new AppException(AppErrorCode.POST_NOT_EXISTED));
+        return post;
     }
+
+
+
 
     public PageResponse<List<PostFriendsOrFollowingResponse>> getPostOfFriendsOrFollowing(String idProfileToken, int pageNo, int pageSize) {
         CompletableFuture<List<FriendsOrFollowingResponse>> future = queryGateway.query(
@@ -181,11 +216,60 @@ public class PostService {
         }).collect(Collectors.toList());
 
         return PageResponse.<List<PostFriendsOrFollowingResponse>>builder()
-                .size(responses.size())
+                .size(pageSize)
                 .totalElements((int) posts.getTotalElements())
                 .totalPages(posts.getTotalPages())
                 .number(pageNo)
                 .items(responses)
                 .build();
     }
+
+    public PostFriendsOrFollowingResponse getPostByID(String idPost) {
+        Post post = postRepository.findById(idPost)
+                .orElseThrow(() -> new AppException(AppErrorCode.POST_NOT_EXISTED));
+
+        ProfileMessageQuery profileMessageQuery = new ProfileMessageQuery( post.getIdProfile(), -1, -1);
+        CompletableFuture<ProfileMessageResponse> future = queryGateway.query(profileMessageQuery, ResponseTypes.instanceOf(ProfileMessageResponse.class));
+        ProfileMessageResponse profileMessageResponse = future.join();
+
+        return PostFriendsOrFollowingResponse.builder()
+                .idPost(post.getIdPost())
+                .caption(post.getCaption())
+                .updateAt(post.getUpdateAt())
+                .images(post.getImages().stream().map(Image::getUrlImage).collect(Collectors.toList()))
+                .idProfile(post.getIdProfile())
+                .fullName(profileMessageResponse.getFullName())
+                .urlAvt(profileMessageResponse.getUrlProfilePicture())
+                .build();
+    }
+
+    public PageResponse<List<PostFriendsOrFollowingResponse>> getPostOfProfile(String idProfile, int pageNo, int pageSize) {
+        ProfileMessageQuery profileMessageQuery = new ProfileMessageQuery(idProfile, -1, -1);
+        CompletableFuture<ProfileMessageResponse> future = queryGateway.query(profileMessageQuery, ResponseTypes.instanceOf(ProfileMessageResponse.class));
+        ProfileMessageResponse profileMessageResponse = future.join();
+
+        Pageable pageable = PageRequest.of(pageNo, pageSize);
+        Page<Post> posts = postRepository.findByIdProfileOrderByUpdateAtDesc(idProfile, pageable);
+
+        List<PostFriendsOrFollowingResponse> responses = posts.getContent().stream()
+                .map(post -> PostFriendsOrFollowingResponse.builder()
+                        .idPost(post.getIdPost())
+                        .caption(post.getCaption())
+                        .updateAt(post.getUpdateAt())
+                        .images(post.getImages().stream().map(Image::getUrlImage).collect(Collectors.toList()))
+                        .idProfile(post.getIdProfile())
+                        .fullName(profileMessageResponse.getFullName())
+                        .urlAvt(profileMessageResponse.getUrlProfilePicture())
+                        .build())
+                .collect(Collectors.toList());
+
+        return PageResponse.<List<PostFriendsOrFollowingResponse>>builder()
+                .size(pageSize)
+                .totalElements((int) posts.getTotalElements())
+                .totalPages(posts.getTotalPages())
+                .number(pageNo)
+                .items(responses)
+                .build();
+    }
+
 }

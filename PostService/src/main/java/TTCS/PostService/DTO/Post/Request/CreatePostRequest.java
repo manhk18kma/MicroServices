@@ -20,5 +20,4 @@ import java.util.List;
 public class CreatePostRequest {
     String caption;
     List<String> base64;
-    String idProfile;
 }

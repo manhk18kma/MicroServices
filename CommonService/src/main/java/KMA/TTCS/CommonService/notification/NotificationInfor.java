@@ -3,9 +3,12 @@ package KMA.TTCS.CommonService.notification;
 import java.util.Date;
 
 public class NotificationInfor {
+    private String notificationIdToRemove;
+
     private String profileSenderId;
     private String profileReceiverId;
-    private String notificationType;
+    private String idTarget;
+
     private Date timestamp;
     private String message;
 
@@ -15,15 +18,30 @@ public class NotificationInfor {
     public NotificationInfor() {
     }
 
-    public NotificationInfor(String profileSenderId, String profileReceiverId, String notificationType, Date timestamp, String message) {
+    public NotificationInfor(String notificationIdToRemove, String profileSenderId, String profileReceiverId, String idTarget, Date timestamp, String message) {
+        this.notificationIdToRemove = notificationIdToRemove;
         this.profileSenderId = profileSenderId;
         this.profileReceiverId = profileReceiverId;
-        this.notificationType = notificationType;
+        this.idTarget = idTarget;
         this.timestamp = timestamp;
         this.message = message;
     }
 
+    public String getNotificationIdToRemove() {
+        return notificationIdToRemove;
+    }
 
+    public void setNotificationIdToRemove(String notificationIdToRemove) {
+        this.notificationIdToRemove = notificationIdToRemove;
+    }
+
+    public String getIdTarget() {
+        return idTarget;
+    }
+
+    public void setIdTarget(String idTarget) {
+        this.idTarget = idTarget;
+    }
 
     public String getProfileSenderId() {
         return profileSenderId;
@@ -41,13 +59,7 @@ public class NotificationInfor {
         this.profileReceiverId = profileReceiverId;
     }
 
-    public String getNotificationType() {
-        return notificationType;
-    }
 
-    public void setNotificationType(String notificationType) {
-        this.notificationType = notificationType;
-    }
 
     public Date getTimestamp() {
         return timestamp;
@@ -70,7 +82,6 @@ public class NotificationInfor {
         return "FriendCreateNotification{" +
                 "profileSenderId='" + profileSenderId + '\'' +
                 ", profileReceiverId='" + profileReceiverId + '\'' +
-                ", notificationType='" + notificationType + '\'' +
                 ", timestamp=" + timestamp +
                 ", message='" + message + '\'' +
                 '}';

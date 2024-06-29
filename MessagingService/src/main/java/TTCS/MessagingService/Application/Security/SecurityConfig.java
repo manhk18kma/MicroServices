@@ -20,10 +20,10 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final String[] PUBLIC_ENDPOINTS = {
-            "/api/v1/identity/token",
+            "/api/v1/identity/token"
     };
     private static final String[] PUBLIC_GET_ENDPOINTS = {
-            "/ws/**", "/swagger-ui/index.html#/**","/v3/api-docs", "/swagger-resources/**", "/swagger-ui/**", "/webjars/**"
+            "/ws/**"
     };
 
 
@@ -38,7 +38,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
 
         httpSecurity.authorizeHttpRequests(request -> request
-                .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
+//                .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
                 .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS).permitAll()
 
                 .anyRequest().authenticated());

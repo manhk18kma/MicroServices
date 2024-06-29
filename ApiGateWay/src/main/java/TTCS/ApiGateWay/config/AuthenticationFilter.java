@@ -37,16 +37,19 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 
     @NonFinal
     private String[] publicEndpoints = {
-            "/api/v1/auth/.*",
-            "/api/v1/accounts",
-//            "/**"
+            "/api/v1/auth/login",
+            "/api/v1/auth/token/introspect",
+            "/api/v1/auth/token/refresh",
+            "/api/v1/auth/logout",
+            "/api/v1/accounts/manhk18kma@gmail.com/activation",
+            "/api/v1/accounts"
     };
 
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         log.info("Enter authentication filter....");
-
+        System.out.println(isPublicEndpoint(exchange.getRequest()));
         if (isPublicEndpoint(exchange.getRequest()))
         {
             return chain.filter(exchange);
@@ -62,8 +65,6 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
             return unauthenticated(exchange.getResponse());
         }
         token = token.replace("Bearer ", "");
-
-
         return identityService.introspect(token).flatMap(introspectResponse -> {
             if (introspectResponse.getData().isValid())
                 return chain.filter(exchange);

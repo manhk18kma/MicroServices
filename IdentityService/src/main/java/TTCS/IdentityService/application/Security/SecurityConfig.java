@@ -23,12 +23,13 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 public class SecurityConfig {
 
     private final String[] PUBLIC_ENDPOINTS = {
-            "/api/v1/identity/token",
-            "/api/v1/identity/token/introspect",
-            "/api/v1/identity/token/refresh",
-            "/api/v1/identity/logout",
-            "/api/v1/identity/*/activate",
-            "/**"
+            "/api/v1/auth/login",
+            "/api/v1/auth/token/introspect",
+            "/api/v1/auth/token/refresh",
+            "/api/v1/auth/logout",
+            "/api/v1/accounts/manhk18kma@gmail.com/activation",
+            "/api/v1/accounts"
+
     };
 
     @Value("${jwt.signerKey}")
@@ -48,7 +49,7 @@ public class SecurityConfig {
 //                .authenticated());
         httpSecurity.authorizeHttpRequests(request -> request
                 .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
-                .requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS).permitAll()
+//                .requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS).permitAll()
 
                 .anyRequest().authenticated());
 

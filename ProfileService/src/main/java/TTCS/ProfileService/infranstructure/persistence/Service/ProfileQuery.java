@@ -161,7 +161,7 @@ public class ProfileQuery {
         System.out.println(friends.size());
 
         Pageable pageable = PageRequest.of(pageNo, pageSize);
-        Page<Profile> page = profileRepository.findByFullNameContaining(name, pageable);
+        Page<Profile> page = profileRepository.searchProfilesByName(name, pageable);
 
         List<SearchProfileResponse> searchResponses = page.getContent().stream().map(profile1 -> {
             SearchProfileResponse response = new SearchProfileResponse();

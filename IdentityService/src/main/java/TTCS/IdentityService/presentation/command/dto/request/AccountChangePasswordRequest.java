@@ -15,7 +15,7 @@ import lombok.experimental.FieldDefaults;
 public class AccountChangePasswordRequest {
     @NotNull @NotBlank(message = "ID must not be blank")
     String idAccount;
-    @NotNull @NotBlank(message = "otp must not be blank")
+//    @NotNull @NotBlank(message = "otp must not be blank")
     int otp;
     @NotNull @NotBlank(message = "oldPassword must not be blank")
     String oldPassword;

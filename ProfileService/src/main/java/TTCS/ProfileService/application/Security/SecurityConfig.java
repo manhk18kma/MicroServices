@@ -24,7 +24,7 @@ public class SecurityConfig {
             "/api/v1/identity/token/introspect",
             "/api/v1/identity/token/refresh",
             "/api/v1/identity/logout",
-            "/**"
+//            "/**"
     };
 //
 //    @Value("${jwt.signerKey}")
@@ -44,7 +44,7 @@ public class SecurityConfig {
 //                .authenticated());
         httpSecurity.authorizeHttpRequests(request -> request
                 .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
-                .requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS).permitAll()
+//                .requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS).permitAll()
 //                .requestMatchers(HttpMethod.PUT, PUBLIC_ENDPOINTS).permitAll()
 
                 .anyRequest().authenticated());

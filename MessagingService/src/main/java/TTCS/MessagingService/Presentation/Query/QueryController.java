@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -63,6 +64,8 @@ public class QueryController {
             @Parameter(description = "Page size (default: 10)")
             @RequestParam(defaultValue = "10") int pageSize
     ){
+        var authen = SecurityContextHolder.getContext();
+        System.out.println(authen.getAuthentication().getName());
         PageResponse<?> response = profileChatService.getAllFriends(
                 icChatProfile , pageNo , pageSize);
         return new ResponseData<>(HttpStatus.OK.value(), "Friends", new Date(), response);

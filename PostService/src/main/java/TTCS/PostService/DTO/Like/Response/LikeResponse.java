@@ -13,8 +13,5 @@ import java.util.Date;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 public class LikeResponse {
-    String idPostLike;
-    String idPost;
-    Date createAt;
-    String idProfile;
+    int count;
 }

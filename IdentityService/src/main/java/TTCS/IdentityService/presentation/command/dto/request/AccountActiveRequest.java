@@ -14,8 +14,8 @@ import java.io.Serializable;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AccountActiveRequest implements Serializable {
-    @NotBlank(message = "otp must not be blank")
-    @NotNull(message = "otp must not be null")
-    @Size(min = 8, message = "otp must be at least 5 characters long")
+//    @NotBlank(message = "otp must not be blank")
+//    @NotNull(message = "otp must not be null")
+//    @Size(min = 8, message = "otp must be at least 5 characters long")
     int otp;
 }

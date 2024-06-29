@@ -76,6 +76,6 @@ public class CommandController {
             @PathVariable("id") @NotNull @NotBlank(message = "ID must not be blank") String id
     ) throws ExecutionException, InterruptedException {
         CompletableFuture<OTPResponse> response = accountCommandService.generateOTP(id);
-        return new ResponseData<>(HttpStatus.OK.value(), "Check your email", new Date(), response.get());
+        return new ResponseData<>(HttpStatus.CREATED.value(), "Check your email", new Date(), response.get());
     }
 }

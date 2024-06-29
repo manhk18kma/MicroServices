@@ -1,5 +1,6 @@
 package TTCS.NotificationService.presentation.DTO;
 
+import TTCS.NotificationService.Domain.Model.NotificationType;
 import lombok.*;
 
 import java.util.Date;
@@ -14,7 +15,8 @@ public class NotificationResponse {
     private String notificationId;
     private String profileSenderId;
     private String profileReceiverId;
-    private String notificationType;
+    private String idTarget;
+    private NotificationType notificationType;
     private Date timestamp;
     private String message;
     private String urlAvtSender;

@@ -1,5 +1,6 @@
 package TTCS.PostService.Exception;
 
+import KMA.TTCS.CommonService.Exception.AxonExceptionCom;
 import TTCS.PostService.Exception.AppException.AppException;
 import TTCS.PostService.Exception.AxonException.AxonException;
 
@@ -87,6 +88,7 @@ public class GlobalExceptionHandler {
         errorResponse.setMessage(e.getMessage());
         return errorResponse;
     }
+
 
 //    @ExceptionHandler(AxonServerRemoteCommandHandlingException.class)
 //    @ResponseStatus(HttpStatus.BAD_REQUEST)

@@ -19,4 +19,6 @@ public class PostResponse {
     Date updateAt;
     List<String> images;
     String idProfile;
+    String fullName;
+    String urlAvt;
 }

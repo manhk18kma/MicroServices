@@ -1,16 +1,14 @@
 package TTCS.ProfileService.application.Query.QueryHanler;
 
+
+import KMA.TTCS.CommonService.Exception.AxonErrorCodeCom;
+import KMA.TTCS.CommonService.Exception.AxonExceptionCom;
 import KMA.TTCS.CommonService.PageResponseCom;
-import KMA.TTCS.CommonService.model.FriendsOrFollowingResponse;
-import KMA.TTCS.CommonService.model.FriendsResponseCom;
-import KMA.TTCS.CommonService.model.ProfileMessageResponse;
-import KMA.TTCS.CommonService.model.ProfileNotificationResponse;
-import KMA.TTCS.CommonService.query.FriendsOrFollowingQuery;
-import KMA.TTCS.CommonService.query.FriendsQuery;
-import KMA.TTCS.CommonService.query.ProfileMessageQuery;
-import KMA.TTCS.CommonService.query.ProfileNotificationQuery;
+import KMA.TTCS.CommonService.model.*;
+import KMA.TTCS.CommonService.query.*;
 import TTCS.ProfileService.application.Exception.AppException.AppErrorCode;
 import TTCS.ProfileService.application.Exception.AppException.AppException;
+import TTCS.ProfileService.application.Exception.AxonException.AxonErrorCode;
 import TTCS.ProfileService.application.Query.Query.*;
 import TTCS.ProfileService.domain.model.Follow;
 import TTCS.ProfileService.domain.model.Friend;
@@ -115,9 +113,14 @@ public class ProfileQueryHandler {
 
 
     @QueryHandler
-    public ProfileMessageResponse handle(ProfileMessageQuery query){
+    public ProfileMessageResponse handle(ProfileMessageQuery query) throws QueryExecutionException {
 
-        Profile profileTarget = profileRepository.findById(query.getIdProfile()).get();
+        Optional<Profile> optionalProfile = profileRepository.findById(query.getIdProfile());
+        if(!optionalProfile.isPresent()){
+            return null;
+        }
+
+        Profile profileTarget = optionalProfile.get();
         Set<String> list = new HashSet<>();
        if(query.getPageNo() > 0 && query.getPageSize() > 0){
            Pageable pageable = PageRequest.of(query.getPageNo(), query.getPageSize());
@@ -238,6 +241,35 @@ public class ProfileQueryHandler {
 
         List<FriendsOrFollowingResponse> responses = profiles.stream().map(profileTarget ->
                 new FriendsOrFollowingResponse(
+                        profileTarget.getIdProfile(),
+                        profileTarget.getFullName(),
+                        profileTarget.getUrlProfilePicture()
+                )
+        ).collect(Collectors.toList());
+
+        return responses;
+    }
+
+    @QueryHandler
+    public List<FriendsOrFollowerResponse> handle(FriendsOrFollowerQuery query) {
+        Profile profile = profileRepository.findById(query.getIdProfile())
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
+
+        List<String> idProfiles = new ArrayList<>();
+
+        profile.getFollower().forEach(follow -> idProfiles.add(follow.getIdProfileFollower()));
+
+        profile.getFriendShip().forEach(friend -> {
+            String idProfileTarget = friend.getIdProfile1().equals(query.getIdProfile())
+                    ? friend.getIdProfile2()
+                    : friend.getIdProfile1();
+            idProfiles.add(idProfileTarget);
+        });
+
+        List<Profile> profiles = profileRepository.findAllById(idProfiles);
+
+        List<FriendsOrFollowerResponse> responses = profiles.stream().map(profileTarget ->
+                new FriendsOrFollowerResponse(
                         profileTarget.getIdProfile(),
                         profileTarget.getFullName(),
                         profileTarget.getUrlProfilePicture()

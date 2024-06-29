@@ -18,9 +18,12 @@ public class NotificationProfile {
     private String notificationId;
     private String profileSenderId;
     private String profileReceiverId;
-    private String notificationType;
+    private NotificationType notificationType;
+    private String idTarget;
     private Date timestamp;
     private String message;
     private Boolean isChecked;
+    private String notificationIdToRemove;
+
 
 }

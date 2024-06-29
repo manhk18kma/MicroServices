@@ -12,26 +12,40 @@ spring:
           predicates:
             - Path=/api/v1/accounts/**
 
-
         - id: IdentityServiceAuth
           uri: http://localhost:8081
           predicates:
             - Path=/api/v1/auth/**
 
-
-
-
-
-
         - id: ProfileService
           uri: http://localhost:8082
           predicates:
-            - Path=/api/v1/profile/**
+            - Path=/api/v1/profiles/**
 
-        - id: NotificationService
+        - id: MessagingService
           uri: http://localhost:8083
           predicates:
-            - Path=/api/v1/notification/**
+            - Path=/api/v1/messages/**
+
+        - id: NotificationService
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/v1/notifications/**
+
+        - id: PostServicePost
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/v1/posts/**
+
+        - id: PostServiceLike
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/v1/likes/**
+
+        - id: PostServiceComment
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/v1/comments/**
 
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin

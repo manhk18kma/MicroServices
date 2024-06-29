@@ -1,5 +1,6 @@
 package TTCS.ProfileService.application.Exception;
 
+import KMA.TTCS.CommonService.Exception.AxonExceptionCom;
 import TTCS.ProfileService.application.Exception.AppException.AppException;
 import TTCS.ProfileService.application.Exception.AxonException.AxonException;
 import jakarta.validation.ConstraintViolationException;
@@ -118,21 +119,6 @@ public class GlobalExceptionHandler {
     }
 
 
-//    @ExceptionHandler(AggregateNotFoundException.class)
-//    @ResponseStatus(HttpStatus.BAD_REQUEST)
-//    public ErrorResponse handleAggregateNotFoundException(AggregateNotFoundException e , WebRequest request) {
-//        String message = e.getMessage();
-//        int start =  message.lastIndexOf(": ");
-//        int end = message.length();
-//        message = message.substring(start+1 ,end );
-//        ErrorResponse errorResponse = new ErrorResponse();
-//        errorResponse.setTimestamp(new Date());
-//        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
-//        errorResponse.setStatus(HttpStatus.BAD_REQUEST.value());
-//        errorResponse.setError(HttpStatus.BAD_REQUEST.getReasonPhrase());
-//        errorResponse.setMessage(message);
-//        return errorResponse;
-//    }
 
 
 

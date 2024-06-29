@@ -1,9 +1,14 @@
 package TTCS.NotificationService.infrastructure.messaging;
 
+import KMA.TTCS.CommonService.model.FriendsOrFollowerResponse;
+import KMA.TTCS.CommonService.model.FriendsOrFollowingResponse;
 import KMA.TTCS.CommonService.model.ProfileNotificationResponse;
 import KMA.TTCS.CommonService.notification.NotificationInfor;
+import KMA.TTCS.CommonService.query.FriendsOrFollowerQuery;
+import KMA.TTCS.CommonService.query.FriendsOrFollowingQuery;
 import KMA.TTCS.CommonService.query.ProfileNotificationQuery;
 import TTCS.NotificationService.Domain.Model.NotificationProfile;
+import TTCS.NotificationService.Domain.Model.NotificationType;
 import TTCS.NotificationService.application.Exception.AppException.AppErrorCode;
 import TTCS.NotificationService.application.Exception.AppException.AppException;
 import TTCS.NotificationService.infrastructure.persistence.Repository.NotificationProfileRepository;
@@ -28,6 +33,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -56,12 +62,13 @@ public class NotificationProfileService {
         notificationProfile.setMessage(notificationProfile.getMessage());
         notificationProfile.setNotificationId(UUID.randomUUID().toString());
         notificationProfile.setIsChecked(false);
+        notificationProfile.setNotificationType(NotificationType.TO_PROFILE);
+
 
         NotificationProfile notificationProfileSaved =  notificationProfileRepository.save(notificationProfile);
         notificationProfileSaved.setMessage(notificationProfile.getMessage().replace("nameTarget", response.getFullNameProfileSender()));
-        sendNotification(notificationProfileSaved, response);
+        sendNotification(notificationProfileSaved, response , notificationProfileSaved.getProfileReceiverId() );
     }
-
     @KafkaListener(topics = "create_friend_topic", id = "notification_info_friend")
     public void receiveNotificationInfoFriend(NotificationInfor notificationInfor) {
         System.out.println("FRIEND");
@@ -73,13 +80,149 @@ public class NotificationProfileService {
         notificationProfile.setMessage(notificationProfile.getMessage());
         notificationProfile.setNotificationId(UUID.randomUUID().toString());
         notificationProfile.setIsChecked(false);
+        notificationProfile.setNotificationType(NotificationType.TO_PROFILE);
+
 
         NotificationProfile notificationProfileSaved =  notificationProfileRepository.save(notificationProfile);
         notificationProfileSaved.setMessage(notificationProfile.getMessage().replace("nameTarget", response.getFullNameProfileSender()));
-        sendNotification(notificationProfileSaved , response);
+        sendNotification(notificationProfileSaved, response , notificationProfileSaved.getProfileReceiverId() );
 
 
 
+    }
+    @KafkaListener(topics = "create_post_topic", id = "notification_info_post")
+    public void receiveNotificationInfoPost(NotificationInfor notificationInfor) {
+        System.out.println("Post");
+        CompletableFuture<List<FriendsOrFollowerResponse>> future1 = queryGateway.query(
+                new FriendsOrFollowerQuery(notificationInfor.getProfileSenderId()),
+                ResponseTypes.multipleInstancesOf(FriendsOrFollowerResponse.class)
+        );
+        List<FriendsOrFollowerResponse> friendsOrFollowerResponses = future1.join();
+
+        List<String> idProfiles = friendsOrFollowerResponses.stream()
+                .map(FriendsOrFollowerResponse::getIdProfile)
+                .collect(Collectors.toList());
+
+        idProfiles.stream().forEach(id->{
+            NotificationProfile notificationProfile = new NotificationProfile();
+            BeanUtils.copyProperties(notificationInfor, notificationProfile);
+
+            notificationProfile.setMessage(notificationProfile.getMessage());
+            notificationProfile.setNotificationId(UUID.randomUUID().toString());
+            notificationProfile.setIsChecked(false);
+            notificationProfile.setNotificationType(NotificationType.TO_POST);
+            notificationProfile.setProfileReceiverId(id);
+            NotificationProfile notificationProfileSaved =  notificationProfileRepository.save(notificationProfile);
+
+
+            ProfileNotificationQuery profileNotificationQuery = new ProfileNotificationQuery(notificationInfor.getProfileSenderId());
+            CompletableFuture<ProfileNotificationResponse> future = queryGateway.query(profileNotificationQuery, ResponseTypes.instanceOf(ProfileNotificationResponse.class));
+            ProfileNotificationResponse response = future.join();
+            notificationProfileSaved.setMessage(notificationProfile.getMessage().replace("nameTarget", response.getFullNameProfileSender()));
+            sendNotification(notificationProfileSaved, response , notificationProfileSaved.getProfileReceiverId() );
+
+
+        });
+
+
+
+
+
+
+
+
+
+
+
+    }
+
+    @KafkaListener(topics = "create_comment_topic", id = "notification_info_comment")
+    public void receiveNotificationInfoComment(NotificationInfor notificationInfor) {
+        System.out.println("Comment");
+        NotificationProfile notificationProfile = new NotificationProfile();
+        BeanUtils.copyProperties(notificationInfor, notificationProfile);
+        ProfileNotificationQuery profileNotificationQuery = new ProfileNotificationQuery(notificationInfor.getProfileSenderId());
+        CompletableFuture<ProfileNotificationResponse> future = queryGateway.query(profileNotificationQuery, ResponseTypes.instanceOf(ProfileNotificationResponse.class));
+        ProfileNotificationResponse response = future.join();
+        notificationProfile.setMessage(notificationProfile.getMessage());
+        notificationProfile.setNotificationId(UUID.randomUUID().toString());
+        notificationProfile.setIsChecked(false);
+        notificationProfile.setNotificationType(NotificationType.TO_POST);
+
+
+        NotificationProfile notificationProfileSaved =  notificationProfileRepository.save(notificationProfile);
+        notificationProfileSaved.setMessage(notificationProfile.getMessage().replace("nameTarget", response.getFullNameProfileSender()));
+        sendNotification(notificationProfileSaved, response , notificationProfileSaved.getProfileReceiverId() );
+    }
+
+    @KafkaListener(topics = "create_like_topic", id = "notification_info_like")
+    public void receiveNotificationInfoLike(NotificationInfor notificationInfor) {
+        System.out.println("Comment");
+        NotificationProfile notificationProfile = new NotificationProfile();
+        BeanUtils.copyProperties(notificationInfor, notificationProfile);
+        ProfileNotificationQuery profileNotificationQuery = new ProfileNotificationQuery(notificationInfor.getProfileSenderId());
+        CompletableFuture<ProfileNotificationResponse> future = queryGateway.query(profileNotificationQuery, ResponseTypes.instanceOf(ProfileNotificationResponse.class));
+        ProfileNotificationResponse response = future.join();
+        notificationProfile.setMessage(notificationProfile.getMessage());
+        notificationProfile.setNotificationId(UUID.randomUUID().toString());
+        notificationProfile.setIsChecked(false);
+        notificationProfile.setNotificationType(NotificationType.TO_POST);
+
+
+        NotificationProfile notificationProfileSaved =  notificationProfileRepository.save(notificationProfile);
+        notificationProfileSaved.setMessage(notificationProfile.getMessage().replace("nameTarget", response.getFullNameProfileSender()));
+        sendNotification(notificationProfileSaved, response , notificationProfileSaved.getProfileReceiverId() );
+    }
+
+
+
+    public void sendNotification(NotificationProfile notificationProfile, ProfileNotificationResponse response , String idProfileReceiver ) {
+
+        // Build notification object
+//        Notification notification = Notification.builder()
+//                .setTitle(title)
+//                .setBody(n)
+//                .setImage(response.getUrlAvtPictureSender())
+//                .build();
+
+        // Build FCM message
+        Message message = Message.builder()
+                .setToken(tokenDevice)
+//                .setNotification(notification)
+                .putData("notificationId", notificationProfile.getNotificationId())
+                .putData("profileSenderId", notificationProfile.getProfileSenderId())
+                .putData("profileReceiverId", idProfileReceiver)
+                .putData("notificationType", notificationProfile.getNotificationType().toString())
+                .putData("timestamp" , String.valueOf(notificationProfile.getTimestamp()))
+                .putData("idTarget" ,notificationProfile.getIdTarget() )
+                .putData("message" , notificationProfile.getMessage())
+                .putData("fullName" , response.getFullNameProfileSender())
+                .putData("urlAvtSender" , response.getUrlAvtPictureSender())
+
+                .build();
+
+        try {
+            System.out.println("here"+idProfileReceiver);
+            System.out.println("send to " + message.toString());
+            System.out.println(firebaseMessaging.send(message));
+//            String notificationId = databaseReference.push().getKey();
+//            databaseReference.child(notificationId).setValueAsync(notification);
+
+        } catch (FirebaseMessagingException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to send FCM message", e);
+        }
+    }
+
+    public CheckNotificationResponse checkNotification(String idProfile) {
+        List<NotificationProfile> notificationProfiles = notificationProfileRepository.findByProfileReceiverIdAndIsChecked(idProfile, false);
+
+        notificationProfiles.forEach(notificationProfile -> {
+            notificationProfile.setIsChecked(true);
+        });
+
+        notificationProfileRepository.saveAll(notificationProfiles);
+        return new CheckNotificationResponse(idProfile);
     }
 
     public PageResponse getNotificationsByIdProfile(int pageNo, int pageSize, String idProfile) {
@@ -97,11 +240,12 @@ public class NotificationProfileService {
                     notificationResponse.setMessage(notificationProfile.getMessage().replace("nameTarget", response.getFullNameProfileSender()));
                     notificationResponse.setUrlAvtSender(response.getUrlAvtPictureSender());
                     notificationResponse.setIsChecked(notificationProfile.getIsChecked());
+                    notificationResponse.setNotificationType(notificationProfile.getNotificationType());
                     return notificationResponse;
                 }).collect(Collectors.toList());
 
 
-
+        Collections.reverse(notificationProfiles); // Reverse the list
         return PageResponse.builder()
                 .size(pageSize)
                 .totalElements((int) page.getTotalElements())
@@ -112,48 +256,4 @@ public class NotificationProfileService {
 
     }
 
-    public void sendNotification(NotificationProfile notificationProfile, ProfileNotificationResponse response) {
-        String title = notificationProfile.getNotificationType().equals("CREATE_FRIEND") ?
-                "New friend" : "New follow";
-
-        // Build notification object
-//        Notification notification = Notification.builder()
-//                .setTitle(title)
-//                .setBody(n)
-//                .setImage(response.getUrlAvtPictureSender())
-//                .build();
-
-        // Build FCM message
-        Message message = Message.builder()
-                .setToken(tokenDevice)
-//                .setNotification(notification)
-                .putData("notificationId", notificationProfile.getNotificationId())
-                .putData("profileSenderId", notificationProfile.getProfileSenderId())
-                .putData("profileReceiverId", notificationProfile.getProfileReceiverId())
-                .putData("notificationType", notificationProfile.getNotificationType())
-                .putData("timestamp" , String.valueOf(notificationProfile.getTimestamp()))
-                .putData("message" , notificationProfile.getMessage())
-                .putData("urlAvtSender" , response.getUrlAvtPictureSender())
-                .build();
-
-        try {
-            System.out.println("here");
-            System.out.println(            firebaseMessaging.send(message));
-//            String notificationId = databaseReference.push().getKey();
-//            databaseReference.child(notificationId).setValueAsync(notification);
-
-        } catch (FirebaseMessagingException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to send FCM message", e);
-        }
-    }
-
-    public CheckNotificationResponse checkNotification(String idProfile, String idNotification) {
-        NotificationProfile notificationProfile = notificationProfileRepository.findById(idNotification)
-                .orElseThrow(()->new AppException(AppErrorCode.NOTIFICATION_NOT_EXISTED));
-
-        notificationProfile.setIsChecked(true);
-        notificationProfileRepository.save(notificationProfile);
-        return new CheckNotificationResponse(notificationProfile.getNotificationId());
-    }
 }

@@ -181,13 +181,18 @@ public class AuthenticationService {
 
         var username = signedJWT.getJWTClaimsSet().getSubject();
 
-        Account account = accountRepository.findByUsername(username);
+        Account account = accountRepository.findByIdProfile(username);
         if (account==null){
             throw new  AppException(AppErrorCode.ACCOUNT_NOT_EXISTED);
         }
         var token = generateToken(account);
 
-        return AuthenticationResponse.builder().token(token).authenticated(true).build();
+        return AuthenticationResponse.builder()
+                .idChatProfile(account.getIdChatProfile())
+                .idProfile(account.getIdProfile())
+                .idAccount(account.getIdAccount())
+                .token(token)
+                .authenticated(true).build();
     }
 
     public  String extractSubject(String token) throws ParseException {

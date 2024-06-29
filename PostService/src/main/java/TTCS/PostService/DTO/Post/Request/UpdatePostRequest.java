@@ -14,5 +14,4 @@ import java.util.List;
 public class UpdatePostRequest {
     String caption;
     List<String> base64OrUrl;
-    String idProfile;
 }
