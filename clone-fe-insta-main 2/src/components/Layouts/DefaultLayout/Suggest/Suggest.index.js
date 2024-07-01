@@ -45,10 +45,34 @@ function Suggest() {
     };
   }, [sharedWidth]); // Phải có sharedWidth ở đây để useEffect lắng nghe sự thay đổi của nó
 
+  ////
+
+  // check height of the screen
+  const [checkHeight, setCheckHeight] = React.useState(window.innerHeight);
+  const checkDivHeight = () => {
+    const newHeight = window.innerHeight;
+    setCheckHeight(newHeight);
+    const divFriend = document.getElementById("divFriend");
+    divFriend.style.height = newHeight - 144 + "px";
+  };
+
+  React.useEffect(() => {
+    // Kiểm tra khi tải trang
+    checkDivHeight();
+
+    // Đăng ký sự kiện resize
+    window.addEventListener("resize", checkDivHeight);
+
+    // Cleanup: Hủy đăng ký sự kiện khi component bị unmount
+    return () => {
+      window.removeEventListener("resize", checkDivHeight);
+    };
+  }, [checkHeight]); // Phải có sharedWidth ở đây để useEffect lắng nghe sự thay đổi của nó
+
   return (
-    <div ref={targetRef} className="col-start-8 col-span-3 ml-auto mr-3">
-      <div className="container w-[300px] h-[500px] px-[16px] mt-[40px]">
-        <div className="flex items-center gap-x-[12px]">
+    <div ref={targetRef} className="col-start-8 col-span-3 mr-3 fixed right-0">
+      <div className="container w-[300px] h-[500px] pl-[16px] mt-[40px]">
+        <div className="flex items-center gap-x-[12px] pr-[16px]">
           <div className="cursor-pointer">
             <img
               src="https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg"
@@ -85,13 +109,26 @@ function Suggest() {
             Switch
           </Button>
         </div>
-        <div className="flex mt-[24px] justify-between">
-          <p className="text-[14px] text-[#737373]">Suggested for you</p>
+        <div className="flex mt-[24px] justify-between pr-[16px]">
+          <p className="text-[14px] text-[#737373]">Người liên hệ</p>
           <span className="text-[12px] font-medium cursor-pointer hover:text-[#b5b5b5]">
             See All
           </span>
         </div>
-        <div className="my-[15px] flex flex-col gap-y-[14px]">
+        <div id="divFriend" className="my-[15px] flex flex-col gap-y-[14px] overflow-auto pr-1">
+          <SuggestItem />
+          <SuggestItem />
+          <SuggestItem />
+          <SuggestItem />
+          <SuggestItem />
+          <SuggestItem />
+          <SuggestItem />
+          <SuggestItem />
+          <SuggestItem />
+          <SuggestItem />
+          <SuggestItem />
+          <SuggestItem />
+          <SuggestItem />
           <SuggestItem />
           <SuggestItem />
           <SuggestItem />

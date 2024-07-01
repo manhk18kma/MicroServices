@@ -1,10 +1,4 @@
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  Popover,
-  Typography,
-} from "@mui/material";
+import { Button, Dialog, DialogContent, Popover } from "@mui/material";
 import { Link } from "react-router-dom";
 import * as React from "react";
 import Search from "./Search";
@@ -13,7 +7,15 @@ import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 import { firebaseConfig } from "../../../../FireBase/firebase-config";
-import { existNotificationAPI, getNotification, getNotificationAPI } from "../../../../api/NotificationAPI";
+import {
+  existNotificationAPI,
+  getNotification,
+  getNotificationAPI,
+} from "../../../../api/NotificationAPI";
+import { searchUser } from "../../../../api/AccountAPI";
+import { createNewPost } from "../../../../api/PostAPI";
+
+import { Carousel } from "react-responsive-carousel";
 
 function SideBar() {
   const targetRef = React.useRef(null);
@@ -121,22 +123,37 @@ function SideBar() {
     setOpenCreate(false);
   };
 
+  // handle create post
   // display image
   const [selectedImage, setSelectedImage] = React.useState(null);
   const handleImageChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
+    const files = e.target.files;
+    const images = [];
+
+    for (let i = 0; i < files.length; i++) {
       let reader = new FileReader();
       reader.onload = (event) => {
-        setSelectedImage(event.target.result);
+        images.push(event.target.result);
+        if (images.length === files.length) {
+          setSelectedImage(images); // Gọi setSelectedImages khi tất cả các file đã được đọc
+        }
       };
-      reader.readAsDataURL(e.target.files[0]);
+      reader.readAsDataURL(files[i]);
     }
+  };
+
+  const [caption, setCaption] = React.useState("");
+
+  const handleCreatePost = () => {
+    createNewPost({ caption, selectedImage }).then((res) => {
+      console.log("post: ", res);
+    });
   };
 
   // firebase notification
   const [notifications, setNotifications] = React.useState([]);
   const [currentToken, setCurrentToken] = React.useState(null);
-  
+
   React.useEffect(() => {
     const initializeFirebaseApp = async () => {
       try {
@@ -161,14 +178,21 @@ function SideBar() {
         // Lắng nghe các thông báo đến khi ứng dụng đang mở
         onMessage(messaging, (payload) => {
           console.log("Thông báo đến khi ứng dụng đang mở:", payload);
-          payload.data.timestamp = new Date().toISOString()
-          if (payload.data?.message && payload.data.profileReceiverId === '96b23f49-b1dc-4071-b0cb-c951b986f437') {
+          payload.data.timestamp = new Date().toISOString();
+          if (
+            payload.data?.message &&
+            payload.data.profileReceiverId ===
+              "96b23f49-b1dc-4071-b0cb-c951b986f437"
+          ) {
             // setNotifications((prevNotifications) => [
             //  ...prevNotifications,
             //  { message: payload.data.message }, // Sử dụng dấu chấm than để nói với TypeScript rằng giá trị này không phải là undefined
             // ]);
-            setExistNotification(true)
-            setListNotification((preNotification) => [payload.data , ...preNotification])
+            setExistNotification(true);
+            setListNotification((preNotification) => [
+              payload.data,
+              ...preNotification,
+            ]);
           }
         });
 
@@ -185,22 +209,31 @@ function SideBar() {
   }, []);
 
   // get notification
-  const [existNotification , setExistNotification] = React.useState(false)
-  const [listNotification, setListNotification] = React.useState([])
+  const [existNotification, setExistNotification] = React.useState(false);
+  const [listNotification, setListNotification] = React.useState([]);
   const handleGetNotification = () => {
-    getNotificationAPI().then(res => {
-      console.log(res.data.items)
-      setListNotification(res.data.items)
-      setExistNotification(false)
-    })
-  }
+    getNotificationAPI().then((res) => {
+      console.log(res.data.items);
+      setListNotification(res.data.items);
+      setExistNotification(false);
+    });
+  };
 
   React.useEffect(() => {
     existNotificationAPI().then((res) => {
-      console.log("exist notification: ", res.data.existed)
-      setExistNotification(res.data.existed)
-    })
-  }, [])
+      console.log("exist notification: ", res.data.existed);
+      setExistNotification(res.data.existed);
+    });
+  }, []);
+
+  // handle search
+  const [listUser, setListUser] = React.useState([]);
+  const handleSeachUser = (e) => {
+    searchUser({ name: e.target.value }).then((res) => {
+      console.log("list user: ", res.data.items);
+      setListUser(res.data.items);
+    });
+  };
 
   return (
     <div ref={targetRef} className="col-start-1 col-span-2">
@@ -381,9 +414,7 @@ function SideBar() {
           </Link>
 
           {/* <!-- Notifications --> */}
-          <div className="relative" 
-           onClick={handleGetNotification}
-          >
+          <div className="relative" onClick={handleGetNotification}>
             <Button
               aria-describedby={idNotification}
               variant="contained"
@@ -430,7 +461,11 @@ function SideBar() {
                 Notifications
               </p>
             </Button>
-            {existNotification ? <div className="w-2 h-2 bg-red-600 rounded-[50%] absolute top-3 left-7"></div> : ""}
+            {existNotification ? (
+              <div className="w-2 h-2 bg-red-600 rounded-[50%] absolute top-3 left-7"></div>
+            ) : (
+              ""
+            )}
           </div>
 
           {/* <!-- Creates --> */}
@@ -606,18 +641,14 @@ function SideBar() {
             <input
               className="w-full border-none focus:outline-none rounded-md bg-[#efefef] p-2"
               type="text"
+              onChange={handleSeachUser}
               placeholder="Search"
             />
           </div>
           <div>
-            <Search name={"The"} />
-            <Search name={"Manh"} />
-            <Search name={"Phong"} />
-            <Search name={"Phong"} />
-
-            <Search name={"Phong"} />
-            <Search name={"Phong"} />
-            <Search name={"Phong"} />
+            {listUser.map((user, index) => {
+              return <Search key={index} user={user} />;
+            })}
           </div>
         </div>
       </Popover>
@@ -648,9 +679,9 @@ function SideBar() {
             <span className="text-base font-medium">New</span>
           </div>
           <div className="mt-2">
-            {listNotification.map((notification, index) => (
-              <Following key={index} notification={notification} />
-            ))}
+            {listNotification.map((notification, index) => {
+              return <Following key={index} notification={notification} />;
+            })}
           </div>
         </div>
       </Popover>
@@ -699,7 +730,10 @@ function SideBar() {
               <span className="text-base font-medium ml-[50%] translate-x-[-50%]">
                 Create new post
               </span>
-              <span className="text-base font-medium ml-auto cursor-pointer text-[#0095f6]">
+              <span
+                onClick={handleCreatePost}
+                className="text-base font-medium ml-auto cursor-pointer text-[#0095f6]"
+              >
                 Share
               </span>
             </div>
@@ -737,15 +771,27 @@ function SideBar() {
                     <input
                       type="file"
                       accept="image/*"
+                      multiple
                       onChange={handleImageChange}
                     />
                   </div>
                 ) : (
-                  <img
-                    className="object-cover "
-                    src={selectedImage}
-                    alt="Selected"
-                  />
+                  <div className="px-2">
+                    <Carousel showThumbs={false} showStatus={false}>
+                      {selectedImage.map((image, index) => {
+                        console.log(image);
+                        return (
+                          <div key={index} class="flex select-none">
+                            <img
+                              className="object-cover w-[335px] h-[430px]"
+                              src={image}
+                              alt="Selected"
+                            />
+                          </div>
+                        );
+                      })}
+                    </Carousel>
+                  </div>
                 )}
               </div>
               <div className="w-[45%] p-3 border-l">
@@ -764,6 +810,8 @@ function SideBar() {
                   <textarea
                     placeholder="Write a caption"
                     className="w-full h-96 border-none outline-none focus:border-none focus:outline-none"
+                    onChange={(e) => setCaption(e.target.value)}
+                    value={caption}
                   />
                 </div>
               </div>

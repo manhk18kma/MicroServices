@@ -65,8 +65,6 @@ export function GroupChat({ idDefault, idChat }) {
       }
     };
   }, [idChat]);
-  
-  
 
   React.useEffect(() => {
     const getData = async () => {
@@ -78,7 +76,7 @@ export function GroupChat({ idDefault, idChat }) {
             pageNo: 0,
             pageSize: 20,
           });
-          console.log(messages)
+          console.log(messages);
 
           setMessages((prevMessages) => [
             ...messages.data.data.items,
@@ -93,8 +91,8 @@ export function GroupChat({ idDefault, idChat }) {
   }, []);
 
   React.useEffect(() => {
-    if(idChat){
-      console.log('idChat exists-------stompClient')
+    if (idChat) {
+      console.log("idChat exists-------stompClient");
       subscribeToUserTopic(idChat);
     }
   }, [stompClient]);
@@ -121,30 +119,22 @@ export function GroupChat({ idDefault, idChat }) {
   };
 
   const subscribeToUserTopic = (topic) => {
-    console.log("-------------")
-    console.log(stompClient)
+    console.log("-------------");
+    console.log(stompClient);
     if (stompClient && stompClient.connected) {
       stompClient.subscribe(`/user/${topic}/private`, (message) => {
-        console.log("Subscribe")
+        console.log("Subscribe");
         const receivedMessage = JSON.parse(message.body);
         console.log("Received private message:", message);
         console.log("Received private message:", receivedMessage);
         console.log("Received private message:", receivedMessage.content);
 
-        setMessages((prevMessages) => [ ...prevMessages,receivedMessage]);
-
+        setMessages((prevMessages) => [...prevMessages, receivedMessage]);
 
         // setMessages((prevMessages) => [receivedMessage, ...prevMessages]);
       });
     }
   };
-
-
-
-  
-
-
-
 
   const handleKeyPress = (event) => {
     if (event.key === "Enter") {
@@ -235,14 +225,15 @@ export function GroupChat({ idDefault, idChat }) {
         </div>
         <div className="mb-6">
           {/* 1 */}
-          {messages.map((message, index) => (
-            // console.log(message)
-            <ChatItem
-              key={index}
-              left={message.idChatProfileSender !== idDefault}
-              content={message.content}
-            />
-          ))}
+          {messages.map((message, index) => {
+            return (
+              <ChatItem
+                key={index}
+                left={message.idChatProfileSender !== idDefault}
+                content={message.content}
+              />
+            );
+          })}
         </div>
       </div>
       <div className="relative mt-auto">

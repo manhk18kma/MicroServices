@@ -4,6 +4,14 @@ import * as React from "react";
 import Thumb from "./Thumb";
 import { Link } from "react-router-dom";
 import CommentDetail from "./CommentDetail";
+import {
+  countLike,
+  createNewComment,
+  getAllComment,
+  likePost,
+  unlikePost,
+} from "../../api/PostAPI";
+import { formatDistanceToNow } from "date-fns";
 
 // Custom tooltip
 export const CustomTooltip = styled(({ className, ...props }) => (
@@ -15,7 +23,7 @@ export const CustomTooltip = styled(({ className, ...props }) => (
   },
 });
 
-function Post() {
+function Post({ post }) {
   // dialog more option
   const [openMoreOption, setOpenMoreOption] = React.useState(false);
 
@@ -53,9 +61,14 @@ function Post() {
 
   // Comment Dialog
   const [openComment, setOpenComment] = React.useState(false);
+  const [listComment, setListComment] = React.useState([]);
 
   const handleClickOpenComment = () => {
     setOpenComment(true);
+    getAllComment({ idPost: post.idPost }).then((res) => {
+      console.log("danh sach comment: ", res)
+      setListComment(res.data.items);
+    });
   };
 
   const handleCloseComment = () => {
@@ -63,29 +76,50 @@ function Post() {
   };
 
   // like
-  const [liked, setLiked] = React.useState(false);
+  const [liked, setLiked] = React.useState(post.liked);
   const [currentLike, setCurrentLike] = React.useState(0);
   const toggleLike = () => {
     setLiked(!liked);
     setCurrentLike(liked ? currentLike - 1 : currentLike + 1);
+    if (liked) {
+      unlikePost({ idPost: post.idPost}).then((res) => {
+        console.log("unlike success");
+      });
+    } else {
+      likePost({ idPost: post.idPost }).then((res) => {
+        console.log("unlike success");
+      });
+    }
   };
+
+  React.useEffect(() => {
+    countLike({ idPost: post.idPost }).then((res) => {
+      console.log("tong so like: ", res.data.count);
+      setCurrentLike(res.data.count);
+    });
+  }, []);
 
   // post
   const [isPost, setIsPost] = React.useState(false);
   const [inputContent, setInputContent] = React.useState("");
-  const [tempInputContent, setTempInputContent] = React.useState("");
 
   const handleInputChange = (e) => {
-    setIsPost(false);
     setInputContent(e.target.value);
-    setTempInputContent(e.target.value);
   };
 
   const handlePost = () => {
-    setIsPost(true);
-    setTempInputContent("")
+    createNewComment({ idPost: post.idPost, content: inputContent }).then((res) => {
+      console.log("return sau khi comment: ", res)
+      console.log("list comment: ", listComment)
+      setListComment([...listComment, res.data]);
+    });
+    setInputContent("");
   };
 
+  // format date
+  const notificationDate = new Date(post.updateAt); // Thay 'timestamp' bằng tên thuộc tính thực tế của bạn
+  const timeAgo = formatDistanceToNow(notificationDate, { addSuffix: true });
+  
   return (
     <div class="mt-12 px-[80px]">
       <div class="flex items-center mb-[12px]">
@@ -94,7 +128,7 @@ function Post() {
             <div>
               <img
                 class="w-[32px] h-[32px] rounded-[50%] object-cover"
-                src="https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg"
+                src={post.urlAvt}
                 alt="asd"
               />
             </div>
@@ -103,10 +137,10 @@ function Post() {
 
         <div class="relative text-[14px] font-medium mr-4 after:block after:content-[''] after:w-[4px] after:h-[4px] after:bg-slate-500 after:rounded-[50%] after:absolute after:right-[-10px] after:top-[50%] after:cursor-default cursor-pointer">
           <CustomTooltip title={<Thumb />} placement="bottom-start">
-            _Pbat
+            {post.fullName}
           </CustomTooltip>
         </div>
-        <span class="text-[14px] mr-4 cursor-pointer">2w</span>
+        <span class="text-[14px] mr-4 cursor-pointer">{timeAgo}</span>
         <span
           onClick={toggleFollow}
           class="relative text-[14px] font-semibold text-[#0095f6] before:block before:content-[''] before:w-[4px] before:h-[4px] before:bg-slate-500 before:rounded-[50%] before:absolute before:left-[-10px] before:top-[50%] before:cursor-default cursor-pointer"
@@ -517,26 +551,9 @@ function Post() {
 
               {/* Comment */}
               <div className="p-2 row-start-2 row-span-6 w-full overflow-auto border-b">
-                <CommentDetail
-                  content={
-                    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi placerat consectetur mi nec sagittis. Nam vulputate dui quis orci tempor pretium. Nullam turpis sem, lacinia non urna at"
-                  }
-                  isTrue={true}
-                />
-                <CommentDetail
-                  content={"Sed sed tempus lorem"}
-                  isTrue={false}
-                />
-                <CommentDetail content={"Sed sed tempus lorem"} isTrue={true} />
-                <CommentDetail
-                  content={"Sed sed tempus lorem"}
-                  isTrue={false}
-                />
-                {isPost ? (
-                  <CommentDetail content={inputContent} isTrue={false} />
-                ) : (
-                  ""
-                )}
+                {listComment.map((comment, index) => {
+                  return <CommentDetail comment={comment} isTrue={false} />;
+                })}
               </div>
 
               <div className="row-start-8 row-span-2 p-4 border-b">
@@ -683,7 +700,7 @@ function Post() {
                   <input
                     type="text"
                     placeholder="Add a comment..."
-                    value={tempInputContent}
+                    value={inputContent}
                     onChange={handleInputChange}
                     className="w-full outline-none break-words whitespace-normal"
                   />
