@@ -3,6 +3,8 @@ import * as React from "react";
 import DefaultGroupChat from "./DefaultGroupChat";
 import GroupChat from "./GroupChat";
 import { getAllFriends } from "../../api/ChatAPI";
+import { jwtDecode } from "jwt-decode";
+import { MyContextMessage } from "../../components/Layouts/MessageLayout";
 
 function Chat() {
   const [open, setOpen] = React.useState(false);
@@ -42,28 +44,38 @@ function Chat() {
   // Get list friends
 
   const [friends, setFriends] = React.useState([]);
-  const [idChat, setIdChat] = React.useState("");
-  const [myId, setMyId] = React.useState("3dafe79f-387f-47c9-81c6-92a3812d15f4");
-
+  const [tempFriend, setTempFriend] = React.useState(null);
+  const [flag , setFlag] = React.useState()
+  const { isNewMessage } = React.useContext(MyContextMessage);  
   React.useEffect(() => {
     const getListFriends = async () => {
-      if (myId.trim().length > 0) {
+      if (tokenDetail.idChatProfile.trim().length > 0) {
         try {
-          console.log('---------')
+          console.log("Re render---------")
           const friends = await getAllFriends({
-            myId: '3dafe79f-387f-47c9-81c6-92a3812d15f4',
+            myId: tokenDetail.idChatProfile,
             pageNo: 0,
             pageSize: 20,
+            token: token
           });
-          console.log(friends.data.data.items)
-          setFriends((prevFriends) => [...friends.data.data.items, ...prevFriends]);
+          console.log("danh sach chat: ", friends.data.data.items)
+          setFriends(friends.data.data.items);
+          // setFriends((prevFriends) => [...friends.data.data.items, ...prevFriends]);
         } catch (error) {
           console.error(error);
         }
       }
     };
     getListFriends();
-  }, []);
+  }, [isNewMessage]);
+
+  //token
+  const token = localStorage.getItem('token')
+  const tokenDetail = jwtDecode(token)
+  console.log("token Detail: ", tokenDetail)
+
+  // get user
+  
 
   return (
     <React.Fragment>
@@ -158,20 +170,21 @@ function Chat() {
               return(
                 <div
                 key={index}
-                onClick={() => setIdChat(friend.idChat)}
+                onClick={() => setTempFriend(friend)}
                 class="cursor-pointer hover:bg-slate-50"
               >
                 <div class="flex items-center py-[8px] gap-x-4">
-                  <div>
+                  <div className="relative">
                     <img
                       class="w-[56px] h-[56px] object-cover rounded-[50%]"
                       src="https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg"
                       alt=""
                     />
+                    {friend.status === "ONLINE" ? (<div className="w-3 h-3 bg-green-600 rounded-[50%] absolute bottom-1 right-1"></div>) : ""}
                   </div>
                   <div class="flex flex-col">
                     <span class="text-[14px]">{friend.chatName}</span>
-                    <span class="text-[12px]">Active 6m ago</span>
+                    {friend.status === "ONLINE" ? "" : (<span class="text-[12px]">6h ago</span>)}
                   </div>
                 </div>
               </div>
@@ -265,10 +278,10 @@ function Chat() {
           </DialogContent>
         </Dialog>
       </div>
-      {idChat === "" ? (
+      {tempFriend === null ? (
         <DefaultGroupChat />
       ) : (
-        <GroupChat idDefault={myId} idChat={idChat} />
+        <GroupChat idDefault={tokenDetail.idChatProfile} tempFriend={tempFriend} setFlag={setFlag} />
       )}
     </React.Fragment>
   );

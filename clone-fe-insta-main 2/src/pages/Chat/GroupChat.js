@@ -4,8 +4,10 @@ import * as React from "react";
 import SockJS from "sockjs-client";
 import Stomp from "stompjs";
 import { getAllMessages } from "../../api/ChatAPI";
+import { jwtDecode } from "jwt-decode";
+import { MyContextMessage } from "../../components/Layouts/MessageLayout";
 
-export function GroupChat({ idDefault, idChat }) {
+export function GroupChat({ idDefault, tempFriend }) {
   // check height of the screen
   const [checkHeight, setCheckHeight] = React.useState(window.innerHeight);
   const checkDivHeight = () => {
@@ -14,6 +16,7 @@ export function GroupChat({ idDefault, idChat }) {
     const divChatDetail = document.getElementById("divChatDetail");
     divChatDetail.style.height = newHeight - 150 + "px";
     console.log(divChatDetail.offsetHeight);
+    console.log("temp friend: ", tempFriend)
   };
 
   React.useEffect(() => {
@@ -37,11 +40,17 @@ export function GroupChat({ idDefault, idChat }) {
     const socket = new SockJS("http://localhost:8083/ws");
     const client = Stomp.over(socket);
 
+    if (stompClient) {
+      stompClient.disconnect(() => {
+        console.log("Disconnected from WebSocket");
+      });
+    }
+
     const connectClient = () => {
       client.connect(
         {},
         () => {
-          console.log("Connected to WebSocket :D");
+          console.log("Connected to WebSocket :D", tempFriend.idChat);
           setStompClient(client);
           // if(idChat){
           //   console.log('idChat exists')
@@ -56,6 +65,7 @@ export function GroupChat({ idDefault, idChat }) {
     };
 
     connectClient();
+    setMessages([])
 
     return () => {
       if (stompClient) {
@@ -64,7 +74,7 @@ export function GroupChat({ idDefault, idChat }) {
         });
       }
     };
-  }, [idChat]);
+  }, [tempFriend.idChat]);
 
   React.useEffect(() => {
     const getData = async () => {
@@ -72,28 +82,29 @@ export function GroupChat({ idDefault, idChat }) {
       if (idDefault.trim().length > 0) {
         try {
           const messages = await getAllMessages({
-            idChat: idChat,
+            idChat: tempFriend.idChat,
             pageNo: 0,
             pageSize: 20,
+            token: token
           });
           console.log(messages);
 
-          setMessages((prevMessages) => [
-            ...messages.data.data.items,
-            ...prevMessages,
-          ]);
+          setMessages(messages.data.data.items.reverse());
         } catch (error) {
           console.error(error);
         }
       }
     };
     getData();
-  }, []);
+  }, [tempFriend]);
+
+  const { setIsNewMessage } = React.useContext(MyContextMessage);
 
   React.useEffect(() => {
-    if (idChat) {
+    if (tempFriend.idChat) {
       console.log("idChat exists-------stompClient");
-      subscribeToUserTopic(idChat);
+      subscribeToUserTopic(tempFriend.idChat);
+      subscribeToUserTopicListChat(tokenDetail.idChatProfile)
     }
   }, [stompClient]);
 
@@ -101,7 +112,7 @@ export function GroupChat({ idDefault, idChat }) {
     if (stompClient && stompClient.connected) {
       // existed chat
       const message = {
-        idChat: idChat,
+        idChat: tempFriend.idChat,
         content: newMessage,
         idChatProfileSender: idDefault,
         idChatProfileReceiver: null,
@@ -114,24 +125,30 @@ export function GroupChat({ idDefault, idChat }) {
       //     idChatProfileReceiver : 'd49f4403-c886-4475-b735-41eaef854ce7'
       // };
       stompClient.send("/app/messages", {}, JSON.stringify(message));
+      
+      setIsNewMessage(newMessage)
       setNewMessage("");
     }
   };
 
   const subscribeToUserTopic = (topic) => {
-    console.log("-------------");
-    console.log(stompClient);
+    console.log("subscribe ---- ",topic)
     if (stompClient && stompClient.connected) {
       stompClient.subscribe(`/user/${topic}/private`, (message) => {
-        console.log("Subscribe");
         const receivedMessage = JSON.parse(message.body);
-        console.log("Received private message:", message);
-        console.log("Received private message:", receivedMessage);
-        console.log("Received private message:", receivedMessage.content);
-
         setMessages((prevMessages) => [...prevMessages, receivedMessage]);
-
+        setIsNewMessage(receivedMessage)
         // setMessages((prevMessages) => [receivedMessage, ...prevMessages]);
+      });
+    }
+  };
+
+  const subscribeToUserTopicListChat = (topic) => {
+    if (stompClient && stompClient.connected) {
+      stompClient.subscribe(`/user/${topic}/chats`, (message) => {
+        console.log("subscribe ---- ",topic)
+
+        setIsNewMessage(message.body)
       });
     }
   };
@@ -142,6 +159,9 @@ export function GroupChat({ idDefault, idChat }) {
     }
   };
 
+  // get token
+  const token = localStorage.getItem('token')
+  const tokenDetail = jwtDecode(token)
   return (
     <div className={`col-start-5 col-span-8 h-[${checkHeight}px]`}>
       <div className="flex items-center gap-4 p-4 border-b">
@@ -152,7 +172,7 @@ export function GroupChat({ idDefault, idChat }) {
           />
         </div>
         <div className="flex flex-col cursor-pointer">
-          <span className="text-[16px] font-medium">The</span>
+          <span className="text-[16px] font-medium">{tempFriend.chatName}</span>
           <span className="text-[12px] text-[#737373]">Active 1m ago</span>
         </div>
         <div className="ml-auto">
@@ -206,7 +226,7 @@ export function GroupChat({ idDefault, idChat }) {
             className="w-[96px] h-[96px] rounded-[50%] object-cover"
             src="https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg"
           />
-          <span className="text-[20px] font-medium mt-3">The</span>
+          <span className="text-[20px] font-medium mt-3">{tempFriend.chatName}</span>
           <div className="flex items-center gap-4">
             <span className="text-[#737373] text-[14px] relative after:block after:content-[''] after:w-[3px] after:h-[3px] after:bg-[#737373] after:rounded-[50%] after:absolute after:right-[-10px] after:top-[49%] after:cursor-default">
               _Pbat
@@ -225,8 +245,10 @@ export function GroupChat({ idDefault, idChat }) {
         </div>
         <div className="mb-6">
           {/* 1 */}
+          {console.log("messages: ", messages)}
           {messages.map((message, index) => {
             return (
+
               <ChatItem
                 key={index}
                 left={message.idChatProfileSender !== idDefault}
@@ -239,6 +261,7 @@ export function GroupChat({ idDefault, idChat }) {
       <div className="relative mt-auto">
         <input
           onKeyDown={handleKeyPress}
+          value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           type="text"
           placeholder="Message..."

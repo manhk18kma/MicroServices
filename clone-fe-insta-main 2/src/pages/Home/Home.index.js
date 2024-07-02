@@ -46,7 +46,7 @@ function Home() {
     })
   }, [])
 
-  const token = jwtDecode(localStorage.getItem('token'))
+  const token = localStorage.getItem('token')
   
   return (
     <div ref={targetRef} class="container col-start-3 col-span-5 mt-4">

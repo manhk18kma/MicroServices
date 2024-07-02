@@ -6,12 +6,15 @@ import { Link } from "react-router-dom";
 import CommentDetail from "./CommentDetail";
 import {
   countLike,
+  createFollow,
   createNewComment,
   getAllComment,
   likePost,
+  unFollow,
   unlikePost,
 } from "../../api/PostAPI";
 import { formatDistanceToNow } from "date-fns";
+import { jwtDecode } from "jwt-decode";
 
 // Custom tooltip
 export const CustomTooltip = styled(({ className, ...props }) => (
@@ -39,6 +42,9 @@ function Post({ post }) {
   const [openUnfollow, setOpenUnfollow] = React.useState(false);
   const handleClickOpenUnfollow = () => {
     setOpenUnfollow(true);
+    unFollow({idProfileTarget: post.idProfile, token: token, tokenDetail: tokenDetail}).then((res) => {
+      console.log("return sau khi unfollow: ", res)
+    })
   };
 
   const handleCloseUnfollow = () => {
@@ -46,12 +52,15 @@ function Post({ post }) {
   };
 
   // Follow
-  const [followed, setFollowed] = React.useState(false);
+  const [followed, setFollowed] = React.useState(post.relationshipType === "FOLLOWING" ? true : false);
   const toggleFollow = () => {
     if (followed) {
       handleClickOpenUnfollow();
     } else {
       setFollowed(true);
+      createFollow({idProfileTarget: post.idProfile, token: token, tokenDetail: tokenDetail}).then((res) => {
+        console.log("return sau khi follow: ", res)
+      })
     }
   };
   const handleUnfollow = () => {
@@ -65,7 +74,7 @@ function Post({ post }) {
 
   const handleClickOpenComment = () => {
     setOpenComment(true);
-    getAllComment({ idPost: post.idPost }).then((res) => {
+    getAllComment({ idPost: post.idPost, token: token }).then((res) => {
       console.log("danh sach comment: ", res)
       setListComment(res.data.items);
     });
@@ -82,18 +91,18 @@ function Post({ post }) {
     setLiked(!liked);
     setCurrentLike(liked ? currentLike - 1 : currentLike + 1);
     if (liked) {
-      unlikePost({ idPost: post.idPost}).then((res) => {
+      unlikePost({ idPost: post.idPost, token: token}).then((res) => {
         console.log("unlike success");
       });
     } else {
-      likePost({ idPost: post.idPost }).then((res) => {
+      likePost({ idPost: post.idPost, token: token }).then((res) => {
         console.log("unlike success");
       });
     }
   };
 
   React.useEffect(() => {
-    countLike({ idPost: post.idPost }).then((res) => {
+    countLike({ idPost: post.idPost, token: token }).then((res) => {
       console.log("tong so like: ", res.data.count);
       setCurrentLike(res.data.count);
     });
@@ -108,7 +117,7 @@ function Post({ post }) {
   };
 
   const handlePost = () => {
-    createNewComment({ idPost: post.idPost, content: inputContent }).then((res) => {
+    createNewComment({ idPost: post.idPost, content: inputContent, token: token }).then((res) => {
       console.log("return sau khi comment: ", res)
       console.log("list comment: ", listComment)
       setListComment([...listComment, res.data]);
@@ -120,6 +129,9 @@ function Post({ post }) {
   const notificationDate = new Date(post.updateAt); // Thay 'timestamp' bằng tên thuộc tính thực tế của bạn
   const timeAgo = formatDistanceToNow(notificationDate, { addSuffix: true });
   
+  //token
+  const token = localStorage.getItem('token')
+  const tokenDetail = jwtDecode(token)
   return (
     <div class="mt-12 px-[80px]">
       <div class="flex items-center mb-[12px]">
@@ -143,9 +155,9 @@ function Post({ post }) {
         <span class="text-[14px] mr-4 cursor-pointer">{timeAgo}</span>
         <span
           onClick={toggleFollow}
-          class="relative text-[14px] font-semibold text-[#0095f6] before:block before:content-[''] before:w-[4px] before:h-[4px] before:bg-slate-500 before:rounded-[50%] before:absolute before:left-[-10px] before:top-[50%] before:cursor-default cursor-pointer"
+          class="relative text-[14px] font-semibold text-[#0095f6] cursor-pointer"
         >
-          {followed ? "Following" : "Follow"}
+          {followed ? "" : "Follow"}
         </span>
         <Button
           variant="outlined"

@@ -3,6 +3,8 @@ import SideBar from "./SideBar/SideBar.index";
 import { checkToken } from "../../../api/AccountAPI";
 import * as React from "react";
 
+export const MyContextMessage = React.createContext();
+
 function MessageLayout({ children }) {
   // account exist
   const [accountExist, setAccountExist] = React.useState(false);
@@ -24,8 +26,11 @@ function MessageLayout({ children }) {
       });
   }, []);
 
+  // check new message
+  const [isNewMessage, setIsNewMessage] = React.useState(false);
+
   return (
-    <React.Fragment>
+    <MyContextMessage.Provider value={{ isNewMessage, setIsNewMessage }}>
       {accountExist === false ? (
         <div className="grid grid-cols-12 gap-x-2">
           <SideBar/>
@@ -89,7 +94,7 @@ function MessageLayout({ children }) {
           </div>
         </div>
       )}
-    </React.Fragment>
+    </MyContextMessage.Provider>
   );
 }
 

@@ -16,6 +16,9 @@ import { searchUser } from "../../../../api/AccountAPI";
 import { createNewPost } from "../../../../api/PostAPI";
 
 import { Carousel } from "react-responsive-carousel";
+import SockJS from "sockjs-client";
+import Stomp from "stompjs";
+import { jwtDecode } from "jwt-decode";
 
 function SideBar() {
   const targetRef = React.useRef(null);
@@ -220,7 +223,7 @@ function SideBar() {
   };
 
   React.useEffect(() => {
-    existNotificationAPI().then((res) => {
+    existNotificationAPI({token}).then((res) => {
       console.log("exist notification: ", res.data.existed);
       setExistNotification(res.data.existed);
     });
@@ -234,6 +237,66 @@ function SideBar() {
       setListUser(res.data.items);
     });
   };
+
+
+  // listen message
+  const [isNewMessage, setIsNewMessage] = React.useState(false) 
+  const [stompClient, setStompClient] = React.useState(null);
+
+  React.useEffect(() => {
+    const socket = new SockJS("http://localhost:8083/ws");
+    const client = Stomp.over(socket);
+
+    if (stompClient) {
+      stompClient.disconnect(() => {
+        console.log("Disconnected from WebSocket");
+      });
+    }
+
+    const connectClient = () => {
+      client.connect(
+        {},
+        () => {
+          setStompClient(client);
+          // if(idChat){
+          //   console.log('idChat exists')
+          //   subscribeToUserTopic(idChat);
+          // }
+        },
+        (error) => {
+          console.error("Error connecting to WebSocket:", error);
+          setTimeout(connectClient, 500);
+        }
+      );
+    };
+
+    connectClient();
+
+    return () => {
+      if (stompClient) {
+        stompClient.disconnect(() => {
+          console.log("Disconnected from WebSocket");
+        });
+      }
+    };
+  }, []);
+
+  React.useEffect(() => {
+    subscribeToUserTopicListChat()
+
+  }, [stompClient]);
+
+  const subscribeToUserTopicListChat = () => {
+    if (stompClient && stompClient.connected) {
+      stompClient.subscribe(`/user/${tokenDetail.idChatProfile}/chats`, (message) => {
+        console.log("subscribe ---- ", tokenDetail.idChatProfile)
+        setIsNewMessage(true)
+      });
+    }
+  };
+
+  const token = localStorage.getItem('token')
+  const tokenDetail = jwtDecode(token)
 
   return (
     <div ref={targetRef} className="col-start-1 col-span-2">
@@ -377,8 +440,10 @@ function SideBar() {
 
           {/* <!-- Messages --> */}
           <Link
+            onClick={() => setIsNewMessage(false)}
             to="/chat"
-            className="w-full p-[12px] flex gap-x-[16px] items-center hover:bg-[#f2f2f2] rounded-[8px] cursor-pointer"
+
+            className="relative w-full p-[12px] flex gap-x-[16px] items-center hover:bg-[#f2f2f2] rounded-[8px] cursor-pointer"
           >
             <svg
               aria-label="Direct"
@@ -411,6 +476,7 @@ function SideBar() {
             <p id="text-message" className="text-[16px]">
               Messages
             </p>
+            {isNewMessage ? (<div className="w-2 h-2 bg-red-600 rounded-[50%] absolute top-3 left-7"></div>) : ""}
           </Link>
 
           {/* <!-- Notifications --> */}
