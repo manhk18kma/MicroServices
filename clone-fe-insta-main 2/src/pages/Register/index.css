@@ -1,0 +1,9 @@
+.otpInput {
+  width: 500px; /* Độ rộng của ô input */
+  height: 500px; /* Chiều cao của ô input */
+  font-size: 20px; /* Kích thước chữ */
+  text-align: center; /* Canh giữa chữ */
+  margin: 5px; /* Khoảng cách giữa các ô input */
+  border: 2px solid #ccc; /* Đường viền của ô input */
+  border-radius: 5px; /* Bo góc cho ô input */
+}

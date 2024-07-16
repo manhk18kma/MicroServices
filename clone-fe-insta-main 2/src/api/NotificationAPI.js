@@ -1,8 +1,7 @@
 import axios from "axios";
 
-export async function existNotificationAPI({token}) {
-  // const url = `http://localhost:8080/api/v1/notifications/${idProfile}/exists-not-checked`;
-  const url = `http://localhost:8080/api/v1/notifications/96b23f49-b1dc-4071-b0cb-c951b986f437/exists-not-checked`;
+export async function existNotificationAPI({token, tokenDetail}) {
+  const url = `http://localhost:8080/api/v1/notifications/${tokenDetail.sub}/exists-not-checked`;
 
   const config = {
     headers: {
@@ -18,12 +17,8 @@ export async function existNotificationAPI({token}) {
   }
 }
 
-export async function getNotificationAPI() {
-  // const url = `http://localhost:8080/api/v1/notifications/${idProfile}/exists-not-checked`;
-  const url = `http://localhost:8080/api/v1/notifications/96b23f49-b1dc-4071-b0cb-c951b986f437?pageNo=0&pageSize=10`;
-
-  const token =
-    "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI5NmIyM2Y0OS1iMWRjLTQwNzEtYjBjYi1jOTUxYjk4NmY0MzciLCJpZEFjY291bnQiOiIwMDQwNjI0Mi00ODUyLTQ5MDctYTkwNS00YWM2ZTAyYmMwMmYiLCJpZENoYXRQcm9maWxlIjoiOTZhNzE4MmEtNjI4Ni00YWQxLTg4MTYtZDgyYjk3NGQyZTkyIiwic2NvcGUiOiJST0xFX1VTRVIiLCJpc3MiOiJLTUEtQUNUVk4iLCJleHAiOjE3MTk3NDEyNDEsImlhdCI6MTcxOTcyMTI0MSwianRpIjoiNDI5YTNiMzItYmUyNS00YmQyLWIxMGQtMjMxMTc2OTA3MDVjIn0.XquzM_2dAZaSYnbZn3LMeCJSZhesbeba9kdNpnrj6YbFTnCBLY151trgcGNrSMabm-PWQl5bx2_g2v0_9ZqIuA"; // Thay thế 'your_token_here' bằng token thực tế của bạn
+export async function getNotificationAPI({token, tokenDetail}) {
+  const url = `http://localhost:8080/api/v1/notifications/${tokenDetail.sub}?pageNo=0&pageSize=10`;
 
   const config = {
     headers: {

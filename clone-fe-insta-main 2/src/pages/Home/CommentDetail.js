@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import ReplyComment from "./ReplyComment";
 import { formatDistanceToNow } from "date-fns";
+import { Link } from "react-router-dom";
 
 function CommentDetail({ comment, isTrue }) {
   const [isReply, setIsReply] = useState(false);
@@ -20,16 +21,16 @@ function CommentDetail({ comment, isTrue }) {
 
   return (
     <div className="mb-4 grid grid-cols-12 text-[14px]">
-      <div className="col-start-1 col-span-1 w-[42px] h-[42px] flex items-center justify-center mr-2 cursor-pointer">
+      <Link to={`/profile/${comment ? comment.idProfile : ""}`} className="col-start-1 col-span-1 w-[42px] h-[42px] flex items-center justify-center mr-2 cursor-pointer">
         <img
           class="w-[32px] h-[32px] rounded-[50%] object-cover"
-          src="https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg"
+          src={comment.urlAvt}
         />
-      </div>
+      </Link>
       <div className="col-start-2 col-span-11 ml-2">
         <div className="mt-1">
-          <span className="inline-block font-medium mr-2">_Pbat</span>
-          <span>{comment.content}</span>
+          <Link to={`/profile/${comment ? comment.idProfile : ""}`} className="inline-block font-medium mr-2 cursor-pointer">{comment.fullName}</Link>
+          <span>{comment.content || comment.caption}</span>
         </div>
         <div className="flex items-center gap-x-2 mt-1 text-[12px]">
           <span>{timeAgo}</span>

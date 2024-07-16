@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import SideBar from "./SideBar/SideBar.index";
 import { checkToken } from "../../../api/AccountAPI";
 import * as React from "react";
+import SideBar from "../DefaultLayout/SideBar/SideBar.index";
 
 export const MyContextMessage = React.createContext();
 
@@ -33,7 +33,7 @@ function MessageLayout({ children }) {
     <MyContextMessage.Provider value={{ isNewMessage, setIsNewMessage }}>
       {accountExist === false ? (
         <div className="grid grid-cols-12 gap-x-2">
-          <SideBar/>
+          <SideBar />
           {children}
         </div>
       ) : (

@@ -1,4 +1,12 @@
-import { Button, Dialog, DialogContent, Tooltip, styled } from "@mui/material";
+import {
+  Alert,
+  Button,
+  Dialog,
+  DialogContent,
+  Snackbar,
+  Tooltip,
+  styled,
+} from "@mui/material";
 import { Carousel } from "react-responsive-carousel";
 import * as React from "react";
 import Thumb from "./Thumb";
@@ -8,10 +16,13 @@ import {
   countLike,
   createFollow,
   createNewComment,
+  deletePost,
   getAllComment,
   likePost,
   unFollow,
+  unFriend,
   unlikePost,
+  updatePost,
 } from "../../api/PostAPI";
 import { formatDistanceToNow } from "date-fns";
 import { jwtDecode } from "jwt-decode";
@@ -41,10 +52,23 @@ function Post({ post }) {
   // dialog unfollow
   const [openUnfollow, setOpenUnfollow] = React.useState(false);
   const handleClickOpenUnfollow = () => {
+    handleCloseMoreOption(true)
     setOpenUnfollow(true);
-    unFollow({idProfileTarget: post.idProfile, token: token, tokenDetail: tokenDetail}).then((res) => {
-      console.log("return sau khi unfollow: ", res)
-    })
+    isFriend
+      ? unFriend({
+          idProfileTarget: post.idProfile,
+          token: token,
+          tokenDetail: tokenDetail,
+        }).then((res) => {
+          console.log("return sau khi unfriend: ", res);
+        })
+      : unFollow({
+          idProfileTarget: post.idProfile,
+          token: token,
+          tokenDetail: tokenDetail,
+        }).then((res) => {
+          console.log("return sau khi unfollow: ", res);
+        });
   };
 
   const handleCloseUnfollow = () => {
@@ -52,15 +76,28 @@ function Post({ post }) {
   };
 
   // Follow
-  const [followed, setFollowed] = React.useState(post.relationshipType === "FOLLOWING" ? true : false);
+  const [followed, setFollowed] = React.useState(
+    post.relationshipType === "FOLLOWING" ||
+      post.relationshipType === "FRIEND" ||
+      post.relationshipType === "YOU"
+      ? true
+      : false
+  );
+  const [isFriend, setIsFriend] = React.useState(
+    post.relationshipType === "FRIEND" ? true : false
+  );
   const toggleFollow = () => {
     if (followed) {
       handleClickOpenUnfollow();
     } else {
       setFollowed(true);
-      createFollow({idProfileTarget: post.idProfile, token: token, tokenDetail: tokenDetail}).then((res) => {
-        console.log("return sau khi follow: ", res)
-      })
+      createFollow({
+        idProfileTarget: post.idProfile,
+        token: token,
+        tokenDetail: tokenDetail,
+      }).then((res) => {
+        console.log("return sau khi follow: ", res);
+      });
     }
   };
   const handleUnfollow = () => {
@@ -75,7 +112,7 @@ function Post({ post }) {
   const handleClickOpenComment = () => {
     setOpenComment(true);
     getAllComment({ idPost: post.idPost, token: token }).then((res) => {
-      console.log("danh sach comment: ", res)
+      console.log("danh sach comment: ", res);
       setListComment(res.data.items);
     });
   };
@@ -91,7 +128,7 @@ function Post({ post }) {
     setLiked(!liked);
     setCurrentLike(liked ? currentLike - 1 : currentLike + 1);
     if (liked) {
-      unlikePost({ idPost: post.idPost, token: token}).then((res) => {
+      unlikePost({ idPost: post.idPost, token: token }).then((res) => {
         console.log("unlike success");
       });
     } else {
@@ -117,9 +154,13 @@ function Post({ post }) {
   };
 
   const handlePost = () => {
-    createNewComment({ idPost: post.idPost, content: inputContent, token: token }).then((res) => {
-      console.log("return sau khi comment: ", res)
-      console.log("list comment: ", listComment)
+    createNewComment({
+      idPost: post.idPost,
+      content: inputContent,
+      token: token,
+    }).then((res) => {
+      console.log("return sau khi comment: ", res);
+      console.log("list comment: ", listComment);
       setListComment([...listComment, res.data]);
     });
     setInputContent("");
@@ -128,30 +169,122 @@ function Post({ post }) {
   // format date
   const notificationDate = new Date(post.updateAt); // Thay 'timestamp' bằng tên thuộc tính thực tế của bạn
   const timeAgo = formatDistanceToNow(notificationDate, { addSuffix: true });
-  
+
   //token
-  const token = localStorage.getItem('token')
-  const tokenDetail = jwtDecode(token)
+  const token = localStorage.getItem("token");
+  const tokenDetail = jwtDecode(token);
+
+  // show edit post dialog
+  const [openEditPost, setOpenEditPost] = React.useState(false);
+
+  const handleClickOpenEditPost = () => {
+    setOpenEditPost(true);
+  };
+
+  const handleCloseEditPost = () => {
+    setOpenEditPost(false);
+  };
+
+  // show delete dialog
+  const [openDeletePost, setOpenDeletePost] = React.useState(false);
+
+  const handleClickOpenDeletePost = () => {
+    setOpenEditPost(false);
+    setOpenDeletePost(true);
+  };
+
+  const handleCloseDeletePost = () => {
+    setOpenDeletePost(false);
+  };
+
+  // poopup
+  const [popupStatus, setPopupStatus] = React.useState("");
+  const [popupContent, setPopupContent] = React.useState("");
+  const [openPopup, setOpenPopup] = React.useState(false);
+  const handleClickPopup = () => {
+    setOpenPopup(true);
+  };
+
+  const handleClosePopup = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+
+    setOpenPopup(false);
+  };
+
+  // delete post api
+  const handleDeletePostAPI = () => {
+    deletePost({ token: token, idPost: post.idPost }).then((res) => {
+      setPopupStatus("success");
+      setPopupContent("Post deleted successfully");
+      handleClickPopup();
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    }).catch((error) => {
+      setPopupStatus("warning");
+      setPopupContent("Failed to delete post");
+      handleClickPopup();
+    })
+  };
+
+  // show edit caption dialog
+  const [openEditCaption, setOpenEditCaption] = React.useState(false);
+  const [caption, setCaption] = React.useState(post.caption);
+
+  const handleClickOpenEditCaption = () => {
+    setOpenEditPost(false);
+    setOpenEditCaption(true);
+  };
+
+  const handleCloseEditCaption = () => {
+    setOpenEditCaption(false);
+  };
+
+  const handleUpdatePostAPI = () => {
+    updatePost({
+      token: token,
+      idProfile: tokenDetail.sub,
+      idPost: post.idPost,
+      caption: caption,
+      base64OrUrl: post.images,
+    })
+      .then((res) => {
+        setPopupStatus("success");
+        setPopupContent("Post updated successfully");
+        handleClickPopup();
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      })
+      .catch((error) => {
+        setPopupStatus("warning");
+        setPopupContent("Failed to update post");
+        handleClickPopup();
+      });
+  };
+
   return (
     <div class="mt-12 px-[80px]">
       <div class="flex items-center mb-[12px]">
         <div class="w-[42px] h-[42px] flex items-center justify-center mr-2 cursor-pointer">
-          <CustomTooltip title={<Thumb />} placement="bottom-start">
-            <div>
-              <img
-                class="w-[32px] h-[32px] rounded-[50%] object-cover"
-                src={post.urlAvt}
-                alt="asd"
-              />
-            </div>
-          </CustomTooltip>
+          <div>
+            <img
+              class="w-[32px] h-[32px] rounded-[50%] object-cover"
+              src={post.urlAvt}
+              alt="asd"
+            />
+          </div>
         </div>
 
-        <div class="relative text-[14px] font-medium mr-4 after:block after:content-[''] after:w-[4px] after:h-[4px] after:bg-slate-500 after:rounded-[50%] after:absolute after:right-[-10px] after:top-[50%] after:cursor-default cursor-pointer">
-          <CustomTooltip title={<Thumb />} placement="bottom-start">
-            {post.fullName}
-          </CustomTooltip>
-        </div>
+        <Link
+          to={`/profile/${post.idProfile}`}
+          class="relative text-[14px] font-medium mr-4 after:block after:content-[''] after:w-[4px] after:h-[4px] after:bg-slate-500 after:rounded-[50%] after:absolute after:right-[-10px] after:top-[50%] after:cursor-default cursor-pointer"
+        >
+          {post.fullName}
+        </Link>
         <span class="text-[14px] mr-4 cursor-pointer">{timeAgo}</span>
         <span
           onClick={toggleFollow}
@@ -198,62 +331,17 @@ function Post({ post }) {
 
       {/* <!-- image --> */}
       <Carousel showThumbs={false} showStatus={false}>
-        <div class="flex select-none">
-          <img
-            class="w-full h-[585px] rounded-[4px] object-cover"
-            src="https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg"
-            alt=""
-          />
-        </div>
-        <div class="flex select-none">
-          <img
-            class="w-full h-[585px] rounded-[4px] object-cover"
-            src="https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg"
-            alt=""
-          />
-        </div>
-        <div class="flex select-none">
-          <img
-            class="w-full h-[585px] rounded-[4px] object-cover"
-            src="https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg"
-            alt=""
-          />
-        </div>
-        <div class="flex select-none">
-          <img
-            class="w-full h-[585px] rounded-[4px] object-cover"
-            src="https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg"
-            alt=""
-          />
-        </div>
-        <div class="flex select-none">
-          <img
-            class="w-full h-[585px] rounded-[4px] object-cover"
-            src="https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg"
-            alt=""
-          />
-        </div>
-        <div class="flex select-none">
-          <img
-            class="w-full h-[585px] rounded-[4px] object-cover"
-            src="https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg"
-            alt=""
-          />
-        </div>
-        <div class="flex select-none">
-          <img
-            class="w-full h-[585px] rounded-[4px] object-cover"
-            src="https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg"
-            alt=""
-          />
-        </div>
-        <div class="flex select-none">
-          <img
-            class="w-full h-[585px] rounded-[4px] object-cover"
-            src="https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg"
-            alt=""
-          />
-        </div>
+        {post.images.map((image, index) => {
+          return (
+            <div key={index} class="flex select-none">
+              <img
+                class="w-full h-[585px] rounded-[4px] object-cover"
+                src={image}
+                alt=""
+              />
+            </div>
+          );
+        })}
       </Carousel>
       <div class="mt-5 flex gap-x-4 mb-2">
         {/* <!-- like --> */}
@@ -395,7 +483,7 @@ function Post({ post }) {
         }}
       >
         <p class="text-[14px] text-[#737373] cursor-pointer">
-          View all 1000 comments
+          View all {post.countComment} comments
         </p>
       </Button>
       <div class="w-full h-[1px] bg-[#dbdbdb] my-6"></div>
@@ -417,7 +505,7 @@ function Post({ post }) {
         >
           <div class="container">
             <div class="grid grid-cols-1 w-[384px] bg-[#fff]">
-              {followed ? (
+              {followed && post.relationshipType !== "YOU" ? (
                 <span
                   onClick={handleClickOpenUnfollow}
                   class="cursor-pointer text-[14px] w-full h-[50px] flex items-center justify-center border-y-[1px] border-[#dbdbdb] text-[#ed4956] font-medium"
@@ -427,24 +515,10 @@ function Post({ post }) {
               ) : (
                 ""
               )}
-              <span
-                onClick={handleCloseMoreOption}
-                class="cursor-pointer text-[14px] w-full h-[50px] flex items-center justify-center border-y-[1px] border-[#dbdbdb]"
-              >
-                Add to favorites
-              </span>
-              <span
-                onClick={handleCloseMoreOption}
-                class="cursor-pointer text-[14px] w-full h-[50px] flex items-center justify-center border-y-[1px] border-[#dbdbdb]"
-              >
+              <Link to={`/post/${post.idPost}`} class="cursor-pointer text-[14px] w-full h-[50px] flex items-center justify-center border-y-[1px] border-[#dbdbdb]">
                 Go to post
-              </span>
-              <span
-                onClick={handleCloseMoreOption}
-                class="cursor-pointer text-[14px] w-full h-[50px] flex items-center justify-center border-y-[1px] border-[#dbdbdb]"
-              >
-                Copy link
-              </span>
+              </Link>
+
               <span
                 onClick={handleCloseMoreOption}
                 class="cursor-pointer text-[14px] w-full h-[50px] flex items-center justify-center border-y-[1px] border-[#dbdbdb]"
@@ -476,11 +550,11 @@ function Post({ post }) {
               <div className="flex justify-center items-center">
                 <img
                   className="w-[90px] h-[90px] rounded-[50%] object-cover"
-                  src="https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg"
+                  src={post.urlAvt}
                 />
               </div>
               <div>
-                <span className="text-[14px]">Unfollow _Pbat?</span>
+                <span className="text-[14px]">Unfollow {post.fullName}?</span>
               </div>
             </div>
             <div
@@ -520,49 +594,74 @@ function Post({ post }) {
         >
           <div className="flex w-[1000px] h-[580px]">
             <div className="w-[45%]">
-              <img
-                className="w-full h-full object-cover"
-                src="https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg"
-              />
+              <Carousel showThumbs={false} showStatus={false}>
+                {post.images.map((image, index) => {
+                  console.log("image: ", image);
+                  return (
+                    <img
+                      key={index}
+                      className="w-full h-[580px] object-cover"
+                      src={image}
+                    />
+                  );
+                })}
+              </Carousel>
             </div>
 
             <div className="w-[55%] grid grid-rows-10 grid-cols-1">
               <div className="row-start-1 row-span-1 border-b">
                 <div className="flex items-center p-2">
-                  <div class="w-[42px] h-[42px] flex items-center justify-center mr-2 cursor-pointer">
+                  <Link
+                    to={`/profile/${post ? post.idProfile : ""}`}
+                    class="w-[42px] h-[42px] flex items-center justify-center mr-2 cursor-pointer"
+                  >
                     <img
                       class="w-[32px] h-[32px] rounded-[50%] object-cover"
-                      src="https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg"
+                      src={post.urlAvt}
                       alt="asd"
                     />
-                  </div>
-                  <div class="relative text-[14px] font-medium mr-4 cursor-pointer">
-                    _Pbat
-                  </div>
-                  <span class="relative text-[14px] font-semibold text-[#0095f6] before:block before:content-[''] before:w-1 before:h-1 before:bg-slate-500 before:rounded-[50%] before:absolute before:left-[-10px] before:top-[45%] before:cursor-default cursor-pointer">
-                    Follow
+                  </Link>
+                  <Link
+                    to={`/profile/${post ? post.idProfile : ""}`}
+                    class="relative text-[14px] font-medium mr-4 cursor-pointer"
+                  >
+                    {post.fullName}
+                  </Link>
+                  <span
+                    onClick={toggleFollow}
+                    class="relative text-[14px] font-semibold text-[#0095f6] cursor-pointer"
+                  >
+                    {followed ? "" : "Follow"}
                   </span>
-                  <div className="ml-auto cursor-pointer">
-                    <svg
-                      aria-label="More options"
-                      class="x1lliihq x1n2onr6 x5n08af"
-                      fill="currentColor"
-                      height="24"
-                      role="img"
-                      viewBox="0 0 24 24"
-                      width="24"
+                  {post.relationshipType === "YOU" ? (
+                    <div
+                      onClick={handleClickOpenEditPost}
+                      className="ml-auto cursor-pointer"
                     >
-                      <title>More options</title>
-                      <circle cx="12" cy="12" r="1.5"></circle>
-                      <circle cx="6" cy="12" r="1.5"></circle>
-                      <circle cx="18" cy="12" r="1.5"></circle>
-                    </svg>
-                  </div>
+                      <svg
+                        aria-label="More options"
+                        class="x1lliihq x1n2onr6 x5n08af"
+                        fill="currentColor"
+                        height="24"
+                        role="img"
+                        viewBox="0 0 24 24"
+                        width="24"
+                      >
+                        <title>More options</title>
+                        <circle cx="12" cy="12" r="1.5"></circle>
+                        <circle cx="6" cy="12" r="1.5"></circle>
+                        <circle cx="18" cy="12" r="1.5"></circle>
+                      </svg>
+                    </div>
+                  ) : (
+                    ""
+                  )}
                 </div>
               </div>
 
               {/* Comment */}
               <div className="p-2 row-start-2 row-span-6 w-full overflow-auto border-b">
+                {post ? <CommentDetail comment={post} isTrue={false} /> : ""}
                 {listComment.map((comment, index) => {
                   return <CommentDetail comment={comment} isTrue={false} />;
                 })}
@@ -689,7 +788,7 @@ function Post({ post }) {
                     {currentLike} likes
                   </span>
                   <span className="text-[12px] text-[#737373]">
-                    2 hours ago
+                    {timeAgo}
                   </span>
                 </div>
               </div>
@@ -728,6 +827,178 @@ function Post({ post }) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* dialog edit post */}
+      <Dialog
+        open={openEditPost}
+        onClose={handleCloseEditPost}
+        sx={{
+          "& .MuiDialog-paper": {
+            borderRadius: "8px",
+            maxWidth: "none",
+          },
+        }}
+      >
+        <DialogContent
+          sx={{
+            padding: "0",
+          }}
+        >
+          <div className="w-80 h-38 flex flex-col justify-center items-center">
+            <div
+              onClick={handleClickOpenDeletePost}
+              className="h-12 cursor-pointer w-full border-b flex items-center justify-center"
+            >
+              <span className="text-sm font-medium text-red-600">Delete</span>
+            </div>
+            <div
+              onClick={handleClickOpenEditCaption}
+              className="h-12 cursor-pointer w-full border-b flex items-center justify-center"
+            >
+              <span className="text-sm">Edit</span>
+            </div>
+            <div
+              onClick={handleCloseEditPost}
+              className="h-12 cursor-pointer w-full border-b flex items-center justify-center"
+            >
+              <span className="text-sm">Cancel</span>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* dialog delete post */}
+      <Dialog
+        open={openDeletePost}
+        onClose={handleCloseDeletePost}
+        sx={{
+          "& .MuiDialog-paper": {
+            borderRadius: "8px",
+            maxWidth: "none",
+          },
+        }}
+      >
+        <DialogContent
+          sx={{
+            padding: "0",
+          }}
+        >
+          <div className="w-96 h-48">
+            <div className="w-full border-b h-24 flex flex-col justify-center items-center">
+              <span className="text-xl">Delete Post?</span>
+              <span className="text-sm text-gray-400">
+                Are you sure you want to delete this post?
+              </span>
+            </div>
+            <div
+              onClick={handleDeletePostAPI}
+              className="flex cursor-pointer font-medium text-red-600 border-b w-full h-12 items-center justify-center"
+            >
+              <span>Delete</span>
+            </div>
+            <div
+              onClick={handleCloseDeletePost}
+              className="flex cursor-pointer w-full h-12 items-center justify-center"
+            >
+              <span>Cancel</span>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* edit caption */}
+      <Dialog
+        open={openEditCaption}
+        onClose={handleCloseEditCaption}
+        sx={{
+          "& .MuiDialog-paper": {
+            borderRadius: "8px",
+            maxWidth: "none",
+          },
+        }}
+      >
+        <DialogContent
+          sx={{
+            padding: "0",
+          }}
+        >
+          <div className="w-[800px] h-[500px]">
+            <div className="flex items-center py-2 px-4 border-b">
+              <span className="text-base font-medium ml-[50%] translate-x-[-50%]">
+                Edit Info
+              </span>
+              <span
+                onClick={handleUpdatePostAPI}
+                className="text-base font-medium ml-auto cursor-pointer text-[#0095f6]"
+              >
+                Done
+              </span>
+            </div>
+            <div className="h-[450px] flex ">
+              <div className="flex justify-center items-center w-[55%] h-full">
+                <div className="px-2">
+                  <Carousel showThumbs={false} showStatus={false}>
+                    {post
+                      ? post.images.map((image, index) => {
+                          console.log(image);
+                          return (
+                            <div key={index} class="flex select-none">
+                              <img
+                                className="object-cover w-[335px] h-[430px]"
+                                src={image}
+                                alt="Selected"
+                              />
+                            </div>
+                          );
+                        })
+                      : ""}
+                  </Carousel>
+                </div>
+              </div>
+              <div className="w-[45%] p-3 border-l">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <img
+                      className="w-[28px] h-[28px] rounded-[50%] object-cover"
+                      src={post ? post.urlAvt : ""}
+                    />
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium">
+                      {post ? post.fullName : ""}
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-4 pt-2 border-t">
+                  <textarea
+                    placeholder="Write a caption"
+                    className="w-full h-96 border-none outline-none focus:border-none focus:outline-none"
+                    onChange={(e) => setCaption(e.target.value)}
+                    value={caption}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* popup password */}
+      <Snackbar
+        open={openPopup}
+        autoHideDuration={3000}
+        onClose={handleClosePopup}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert
+          onClose={handleClosePopup}
+          severity={popupStatus}
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          {popupContent}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }

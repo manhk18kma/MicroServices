@@ -1,5 +1,12 @@
-import { Button, Dialog, DialogContent, Popover } from "@mui/material";
-import { Link } from "react-router-dom";
+import {
+  Alert,
+  Button,
+  Dialog,
+  DialogContent,
+  Popover,
+  Snackbar,
+} from "@mui/material";
+import { Link, useNavigate } from "react-router-dom";
 import * as React from "react";
 import Search from "./Search";
 import Following from "./Following";
@@ -12,7 +19,7 @@ import {
   getNotification,
   getNotificationAPI,
 } from "../../../../api/NotificationAPI";
-import { searchUser } from "../../../../api/AccountAPI";
+import { getProfile, logout, searchUser } from "../../../../api/AccountAPI";
 import { createNewPost } from "../../../../api/PostAPI";
 
 import { Carousel } from "react-responsive-carousel";
@@ -123,6 +130,24 @@ function SideBar() {
   };
 
   const handleCloseCreate = () => {
+    handleClickOpenDiscardCreate();
+  };
+
+  // Discard Create
+  const [openDiscardCreate, setOpenDiscardCreate] = React.useState(false);
+
+  const handleClickOpenDiscardCreate = () => {
+    setOpenDiscardCreate(true);
+  };
+
+  const handleCloseDiscardCreate = () => {
+    setOpenDiscardCreate(false);
+  };
+
+  const handleDiscard = () => {
+    setSelectedImage(null);
+    setCaption("");
+    setOpenDiscardCreate(false);
     setOpenCreate(false);
   };
 
@@ -145,12 +170,45 @@ function SideBar() {
     }
   };
 
+  // poopup
+  const [popupStatus, setPopupStatus] = React.useState("");
+  const [popupContent, setPopupContent] = React.useState("");
+  const [openPopup, setOpenPopup] = React.useState(false);
+  const handleClickPopup = () => {
+    setOpenPopup(true);
+  };
+
+  const handleClosePopup = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+
+    setOpenPopup(false);
+  };
+
   const [caption, setCaption] = React.useState("");
+  const [loadingCreatePost, setLoadingCreatePost] = React.useState(false);
 
   const handleCreatePost = () => {
-    createNewPost({ caption, selectedImage }).then((res) => {
-      console.log("post: ", res);
-    });
+    setLoadingCreatePost(true);
+    createNewPost({ caption, selectedImage, token })
+      .then((res) => {
+        console.log("return sau khi post: ", res);
+        setSelectedImage(null);
+        setCaption("");
+        handleCloseCreate();
+        setPopupStatus("success");
+        setPopupContent("Post successful");
+        handleClickPopup();
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      })
+      .catch((error) => {
+        setPopupStatus("warning");
+        setPopupContent("Failed to post");
+        handleClickPopup();
+      });
   };
 
   // firebase notification
@@ -182,10 +240,10 @@ function SideBar() {
         onMessage(messaging, (payload) => {
           console.log("Thông báo đến khi ứng dụng đang mở:", payload);
           payload.data.timestamp = new Date().toISOString();
+
           if (
             payload.data?.message &&
-            payload.data.profileReceiverId ===
-              "96b23f49-b1dc-4071-b0cb-c951b986f437"
+            payload.data.profileReceiverId === tokenDetail.sub
           ) {
             // setNotifications((prevNotifications) => [
             //  ...prevNotifications,
@@ -215,32 +273,35 @@ function SideBar() {
   const [existNotification, setExistNotification] = React.useState(false);
   const [listNotification, setListNotification] = React.useState([]);
   const handleGetNotification = () => {
-    getNotificationAPI().then((res) => {
-      console.log(res.data.items);
-      setListNotification(res.data.items);
-      setExistNotification(false);
-    });
+    getNotificationAPI({ token: token, tokenDetail: tokenDetail }).then(
+      (res) => {
+        console.log(res.data.items);
+        setListNotification(res.data.items);
+        setExistNotification(false);
+      }
+    );
   };
 
   React.useEffect(() => {
-    existNotificationAPI({token}).then((res) => {
-      console.log("exist notification: ", res.data.existed);
-      setExistNotification(res.data.existed);
-    });
+    existNotificationAPI({ token: token, tokenDetail: tokenDetail }).then(
+      (res) => {
+        console.log("exist notification: ", res.data.existed);
+        setExistNotification(res.data.existed);
+      }
+    );
   }, []);
 
   // handle search
   const [listUser, setListUser] = React.useState([]);
   const handleSeachUser = (e) => {
-    searchUser({ name: e.target.value }).then((res) => {
+    searchUser({ token: token, name: e.target.value }).then((res) => {
       console.log("list user: ", res.data.items);
       setListUser(res.data.items);
     });
   };
 
-
   // listen message
-  const [isNewMessage, setIsNewMessage] = React.useState(false) 
+  const [isNewMessage, setIsNewMessage] = React.useState(false);
   const [stompClient, setStompClient] = React.useState(null);
 
   React.useEffect(() => {
@@ -282,21 +343,46 @@ function SideBar() {
   }, []);
 
   React.useEffect(() => {
-    subscribeToUserTopicListChat()
-
+    subscribeToUserTopicListChat();
   }, [stompClient]);
 
   const subscribeToUserTopicListChat = () => {
     if (stompClient && stompClient.connected) {
-      stompClient.subscribe(`/user/${tokenDetail.idChatProfile}/chats`, (message) => {
-        console.log("subscribe ---- ", tokenDetail.idChatProfile)
-        setIsNewMessage(true)
-      });
+      stompClient.subscribe(
+        `/user/${tokenDetail.idChatProfile}/chats`,
+        (message) => {
+          console.log("subscribe ---- ", tokenDetail.idChatProfile);
+          setIsNewMessage(true);
+        }
+      );
     }
   };
 
-  const token = localStorage.getItem('token')
-  const tokenDetail = jwtDecode(token)
+  const token = localStorage.getItem("token");
+  const tokenDetail = jwtDecode(token);
+
+  // get my profile
+  const [myProfile, setMyProfile] = React.useState();
+  React.useEffect(() => {
+    getProfile({ token: token, idProfile: tokenDetail.sub }).then((res) => {
+      console.log("sau khi get my profile: ", res.data);
+      setMyProfile(res.data);
+    });
+  }, []);
+
+  const navigate = useNavigate();
+  const handleLogout = () => {
+    logout({ token: token }).then((res) => {
+      console.log("log out", res);
+    });
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
+  const handleClickHome = () => {
+    navigate("/");
+    window.location.reload();
+  };
 
   return (
     <div ref={targetRef} className="col-start-1 col-span-2">
@@ -344,8 +430,8 @@ function SideBar() {
 
           {/* <!-- Home --> */}
 
-          <Link
-            to="/"
+          <div
+            onClick={handleClickHome}
             className="w-full p-[12px] flex gap-x-[16px] items-center hover:bg-[#f2f2f2] rounded-[8px] cursor-pointer"
           >
             <svg
@@ -369,7 +455,7 @@ function SideBar() {
             <p id="text-home" className="text-[16px]">
               Home
             </p>
-          </Link>
+          </div>
 
           {/* <!-- Search --> */}
 
@@ -439,10 +525,10 @@ function SideBar() {
           </Button>
 
           {/* <!-- Messages --> */}
+          {console.log("day la idChat", tokenDetail.idChatProfile)}
           <Link
             onClick={() => setIsNewMessage(false)}
-            to="/chat"
-
+            to={`/chat/${tokenDetail.sub}/${tokenDetail.idChatProfile}`}
             className="relative w-full p-[12px] flex gap-x-[16px] items-center hover:bg-[#f2f2f2] rounded-[8px] cursor-pointer"
           >
             <svg
@@ -476,7 +562,11 @@ function SideBar() {
             <p id="text-message" className="text-[16px]">
               Messages
             </p>
-            {isNewMessage ? (<div className="w-2 h-2 bg-red-600 rounded-[50%] absolute top-3 left-7"></div>) : ""}
+            {isNewMessage ? (
+              <div className="w-2 h-2 bg-red-600 rounded-[50%] absolute top-3 left-7"></div>
+            ) : (
+              ""
+            )}
           </Link>
 
           {/* <!-- Notifications --> */}
@@ -612,11 +702,11 @@ function SideBar() {
 
           {/* <!-- Profile --> */}
           <Link
-            to="/profile"
+            to={`/profile/${tokenDetail.sub}`}
             className="w-full p-[12px] flex gap-x-[16px] items-center hover:bg-[#f2f2f2] rounded-[8px] cursor-pointer"
           >
             <img
-              src="https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg"
+              src={myProfile ? myProfile.urlProfilePicture : ""}
               alt="dsa"
               className="w-[24px] h-[24px] rounded-[50%] object-cover"
             />
@@ -711,7 +801,7 @@ function SideBar() {
               placeholder="Search"
             />
           </div>
-          <div>
+          <div className="h-[400px] overflow-auto">
             {listUser.map((user, index) => {
               return <Search key={index} user={user} />;
             })}
@@ -744,9 +834,20 @@ function SideBar() {
           <div>
             <span className="text-base font-medium">New</span>
           </div>
-          <div className="mt-2">
-            {listNotification.map((notification, index) => {
-              return <Following key={index} notification={notification} />;
+          <div className="mt-2 h-[440px] overflow-auto">
+            {console.log("list notification: ", listNotification)}
+            {listNotification.map((itemNotification, index) => {
+              return (
+                <Link
+                  to={
+                    itemNotification.notificationType === "TO_POST"
+                      ? `/post/${itemNotification.idTarget}`
+                      : `/profile/${itemNotification.idTarget}`
+                  }
+                >
+                  <Following key={index} itemNotification={itemNotification} />
+                </Link>
+              );
             })}
           </div>
         </div>
@@ -770,7 +871,10 @@ function SideBar() {
           marginLeft: "1rem",
         }}
       >
-        <div className="w-[180px] h-[50px] flex items-center justify-center cursor-pointer hover:bg-[#efefef]">
+        <div
+          onClick={handleLogout}
+          className="w-[180px] h-[50px] flex items-center justify-center cursor-pointer hover:bg-[#efefef]"
+        >
           <span className="text-base mb-1 font-medium">Log out</span>
         </div>
       </Popover>
@@ -792,99 +896,186 @@ function SideBar() {
           }}
         >
           <div className="w-[800px] h-[500px]">
-            <div className="flex items-center py-2 px-4 border-b">
-              <span className="text-base font-medium ml-[50%] translate-x-[-50%]">
-                Create new post
-              </span>
-              <span
-                onClick={handleCreatePost}
-                className="text-base font-medium ml-auto cursor-pointer text-[#0095f6]"
+            {loadingCreatePost ? (
+              <div
+                className="flex items-center justify-center h-full"
+                role="status"
               >
-                Share
+                <svg
+                  aria-hidden="true"
+                  class="w-14 h-14 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
+                  viewBox="0 0 100 101"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                    fill="currentColor"
+                  />
+                  <path
+                    d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                    fill="currentFill"
+                  />
+                </svg>
+                <span class="sr-only">Loading...</span>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center py-2 px-4 border-b">
+                  <span className="text-base font-medium ml-[50%] translate-x-[-50%]">
+                    Create new post
+                  </span>
+                  <span
+                    onClick={handleCreatePost}
+                    className="text-base font-medium ml-auto cursor-pointer text-[#0095f6]"
+                  >
+                    Share
+                  </span>
+                </div>
+                <div className="h-[450px] flex ">
+                  <div className="flex justify-center items-center w-[55%] h-full">
+                    {selectedImage === null ? (
+                      <div>
+                        <div>
+                          <svg
+                            aria-label="Icon to represent media such as images or videos"
+                            class="x1lliihq x1n2onr6 x5n08af"
+                            fill="currentColor"
+                            height="77"
+                            role="img"
+                            viewBox="0 0 97.6 77.3"
+                            width="96"
+                          >
+                            <title>
+                              Icon to represent media such as images or videos
+                            </title>
+                            <path
+                              d="M16.3 24h.3c2.8-.2 4.9-2.6 4.8-5.4-.2-2.8-2.6-4.9-5.4-4.8s-4.9 2.6-4.8 5.4c.1 2.7 2.4 4.8 5.1 4.8zm-2.4-7.2c.5-.6 1.3-1 2.1-1h.2c1.7 0 3.1 1.4 3.1 3.1 0 1.7-1.4 3.1-3.1 3.1-1.7 0-3.1-1.4-3.1-3.1 0-.8.3-1.5.8-2.1z"
+                              fill="currentColor"
+                            ></path>
+                            <path
+                              d="M84.7 18.4 58 16.9l-.2-3c-.3-5.7-5.2-10.1-11-9.8L12.9 6c-5.7.3-10.1 5.3-9.8 11L5 51v.8c.7 5.2 5.1 9.1 10.3 9.1h.6l21.7-1.2v.6c-.3 5.7 4 10.7 9.8 11l34 2h.6c5.5 0 10.1-4.3 10.4-9.8l2-34c.4-5.8-4-10.7-9.7-11.1zM7.2 10.8C8.7 9.1 10.8 8.1 13 8l34-1.9c4.6-.3 8.6 3.3 8.9 7.9l.2 2.8-5.3-.3c-5.7-.3-10.7 4-11 9.8l-.6 9.5-9.5 10.7c-.2.3-.6.4-1 .5-.4 0-.7-.1-1-.4l-7.8-7c-1.4-1.3-3.5-1.1-4.8.3L7 49 5.2 17c-.2-2.3.6-4.5 2-6.2zm8.7 48c-4.3.2-8.1-2.8-8.8-7.1l9.4-10.5c.2-.3.6-.4 1-.5.4 0 .7.1 1 .4l7.8 7c.7.6 1.6.9 2.5.9.9 0 1.7-.5 2.3-1.1l7.8-8.8-1.1 18.6-21.9 1.1zm76.5-29.5-2 34c-.3 4.6-4.3 8.2-8.9 7.9l-34-2c-4.6-.3-8.2-4.3-7.9-8.9l2-34c.3-4.4 3.9-7.9 8.4-7.9h.5l34 2c4.7.3 8.2 4.3 7.9 8.9z"
+                              fill="currentColor"
+                            ></path>
+                            <path
+                              d="M78.2 41.6 61.3 30.5c-2.1-1.4-4.9-.8-6.2 1.3-.4.7-.7 1.4-.7 2.2l-1.2 20.1c-.1 2.5 1.7 4.6 4.2 4.8h.3c.7 0 1.4-.2 2-.5l18-9c2.2-1.1 3.1-3.8 2-6-.4-.7-.9-1.3-1.5-1.8zm-1.4 6-18 9c-.4.2-.8.3-1.3.3-.4 0-.9-.2-1.2-.4-.7-.5-1.2-1.3-1.1-2.2l1.2-20.1c.1-.9.6-1.7 1.4-2.1.8-.4 1.7-.3 2.5.1L77 43.3c1.2.8 1.5 2.3.7 3.4-.2.4-.5.7-.9.9z"
+                              fill="currentColor"
+                            ></path>
+                          </svg>
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleImageChange}
+                        />
+                      </div>
+                    ) : (
+                      <div className="px-2">
+                        <Carousel showThumbs={false} showStatus={false}>
+                          {selectedImage.map((image, index) => {
+                            console.log(image);
+                            return (
+                              <div key={index} class="flex select-none">
+                                <img
+                                  className="object-cover w-[335px] h-[430px]"
+                                  src={image}
+                                  alt="Selected"
+                                />
+                              </div>
+                            );
+                          })}
+                        </Carousel>
+                      </div>
+                    )}
+                  </div>
+                  <div className="w-[45%] p-3 border-l">
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <img
+                          className="w-[28px] h-[28px] rounded-[50%] object-cover"
+                          src={myProfile ? myProfile.urlProfilePicture : ""}
+                        />
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium">
+                          {myProfile ? myProfile.fullName : ""}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-2 border-t">
+                      <textarea
+                        placeholder="Write a caption"
+                        className="w-full h-96 border-none outline-none focus:border-none focus:outline-none"
+                        onChange={(e) => setCaption(e.target.value)}
+                        value={caption}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Discard create */}
+      <Dialog
+        open={openDiscardCreate}
+        onClose={handleCloseDiscardCreate}
+        sx={{
+          "& .MuiDialog-paper": {
+            borderRadius: "8px",
+            maxWidth: "none",
+          },
+        }}
+      >
+        <DialogContent
+          sx={{
+            padding: "0",
+          }}
+        >
+          <div className="w-80">
+            <div className="flex flex-col justify-center items-center py-6 border-b ">
+              <span className="text-xl font-medium">Discard post?</span>
+              <span className="text-sm text-gray-500">
+                If you leave, your edits won't be saved.
               </span>
             </div>
-            <div className="h-[450px] flex ">
-              <div className="flex justify-center items-center w-[55%] h-full">
-                {selectedImage === null ? (
-                  <div>
-                    <div>
-                      <svg
-                        aria-label="Icon to represent media such as images or videos"
-                        class="x1lliihq x1n2onr6 x5n08af"
-                        fill="currentColor"
-                        height="77"
-                        role="img"
-                        viewBox="0 0 97.6 77.3"
-                        width="96"
-                      >
-                        <title>
-                          Icon to represent media such as images or videos
-                        </title>
-                        <path
-                          d="M16.3 24h.3c2.8-.2 4.9-2.6 4.8-5.4-.2-2.8-2.6-4.9-5.4-4.8s-4.9 2.6-4.8 5.4c.1 2.7 2.4 4.8 5.1 4.8zm-2.4-7.2c.5-.6 1.3-1 2.1-1h.2c1.7 0 3.1 1.4 3.1 3.1 0 1.7-1.4 3.1-3.1 3.1-1.7 0-3.1-1.4-3.1-3.1 0-.8.3-1.5.8-2.1z"
-                          fill="currentColor"
-                        ></path>
-                        <path
-                          d="M84.7 18.4 58 16.9l-.2-3c-.3-5.7-5.2-10.1-11-9.8L12.9 6c-5.7.3-10.1 5.3-9.8 11L5 51v.8c.7 5.2 5.1 9.1 10.3 9.1h.6l21.7-1.2v.6c-.3 5.7 4 10.7 9.8 11l34 2h.6c5.5 0 10.1-4.3 10.4-9.8l2-34c.4-5.8-4-10.7-9.7-11.1zM7.2 10.8C8.7 9.1 10.8 8.1 13 8l34-1.9c4.6-.3 8.6 3.3 8.9 7.9l.2 2.8-5.3-.3c-5.7-.3-10.7 4-11 9.8l-.6 9.5-9.5 10.7c-.2.3-.6.4-1 .5-.4 0-.7-.1-1-.4l-7.8-7c-1.4-1.3-3.5-1.1-4.8.3L7 49 5.2 17c-.2-2.3.6-4.5 2-6.2zm8.7 48c-4.3.2-8.1-2.8-8.8-7.1l9.4-10.5c.2-.3.6-.4 1-.5.4 0 .7.1 1 .4l7.8 7c.7.6 1.6.9 2.5.9.9 0 1.7-.5 2.3-1.1l7.8-8.8-1.1 18.6-21.9 1.1zm76.5-29.5-2 34c-.3 4.6-4.3 8.2-8.9 7.9l-34-2c-4.6-.3-8.2-4.3-7.9-8.9l2-34c.3-4.4 3.9-7.9 8.4-7.9h.5l34 2c4.7.3 8.2 4.3 7.9 8.9z"
-                          fill="currentColor"
-                        ></path>
-                        <path
-                          d="M78.2 41.6 61.3 30.5c-2.1-1.4-4.9-.8-6.2 1.3-.4.7-.7 1.4-.7 2.2l-1.2 20.1c-.1 2.5 1.7 4.6 4.2 4.8h.3c.7 0 1.4-.2 2-.5l18-9c2.2-1.1 3.1-3.8 2-6-.4-.7-.9-1.3-1.5-1.8zm-1.4 6-18 9c-.4.2-.8.3-1.3.3-.4 0-.9-.2-1.2-.4-.7-.5-1.2-1.3-1.1-2.2l1.2-20.1c.1-.9.6-1.7 1.4-2.1.8-.4 1.7-.3 2.5.1L77 43.3c1.2.8 1.5 2.3.7 3.4-.2.4-.5.7-.9.9z"
-                          fill="currentColor"
-                        ></path>
-                      </svg>
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleImageChange}
-                    />
-                  </div>
-                ) : (
-                  <div className="px-2">
-                    <Carousel showThumbs={false} showStatus={false}>
-                      {selectedImage.map((image, index) => {
-                        console.log(image);
-                        return (
-                          <div key={index} class="flex select-none">
-                            <img
-                              className="object-cover w-[335px] h-[430px]"
-                              src={image}
-                              alt="Selected"
-                            />
-                          </div>
-                        );
-                      })}
-                    </Carousel>
-                  </div>
-                )}
-              </div>
-              <div className="w-[45%] p-3 border-l">
-                <div className="flex items-center gap-3">
-                  <div>
-                    <img
-                      className="w-[28px] h-[28px] rounded-[50%] object-cover"
-                      src="https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg"
-                    />
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium">The</span>
-                  </div>
-                </div>
-                <div className="mt-4 pt-2 border-t">
-                  <textarea
-                    placeholder="Write a caption"
-                    className="w-full h-96 border-none outline-none focus:border-none focus:outline-none"
-                    onChange={(e) => setCaption(e.target.value)}
-                    value={caption}
-                  />
-                </div>
-              </div>
+            <div
+              onClick={handleDiscard}
+              className="text-center py-2 border-b cursor-pointer"
+            >
+              <span className="text-base font-medium text-red-600">
+                Discard
+              </span>
+            </div>
+            <div
+              onClick={handleCloseDiscardCreate}
+              className="text-center py-2  cursor-pointer"
+            >
+              <span className="text-base ">Cancel</span>
             </div>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* popup password */}
+      <Snackbar
+        open={openPopup}
+        autoHideDuration={3000}
+        onClose={handleClosePopup}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert
+          onClose={handleClosePopup}
+          severity={popupStatus}
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          {popupContent}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }
